@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🥋지원재혁のNihongo✏</title>
+    
+    <!-- 👇 유저님이 요청하신 아이콘 적용 완벽 복구 -->
     <link rel="apple-touch-icon" href="https://i.postimg.cc/kMtWStvt/japan-famous-landmark-icons-illustrations-olorful-flat-style-icon-design-free-vector.jpg">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://i.postimg.cc/kMtWStvt/japan-famous-landmark-icons-illustrations-olorful-flat-style-icon-design-free-vector.jpg">
+    <link rel="icon" type="image/jpeg" sizes="192x192" href="https://i.postimg.cc/kMtWStvt/japan-famous-landmark-icons-illustrations-olorful-flat-style-icon-design-free-vector.jpg">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -21,7 +24,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* 모바일 사파리 하단바/스크롤 잘림 방지 (전체화면 고정) */
+        /* 👇 모바일 사파리 하단바/스크롤 잘림 방지 (화면 절대 고정) */
         @media (max-width: 768px) {
             html, body {
                 height: 100%;
@@ -73,7 +76,7 @@
             </div>
         </div>
 
-        <!-- 카드 영역 -->
+        <!-- 카드 영역 (스크롤 없이 한 화면에 쏙 들어가도록 패딩/마진 다이어트) -->
         <div class="w-full flex-1 perspective-1000 my-1 cursor-pointer relative min-h-0" onclick="handleCardClick()">
             <div id="flashcard" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-3xl shadow-xl">
                 
@@ -84,37 +87,37 @@
                 </div>
 
                 <!-- 뒷면 (여백 대폭 축소) -->
-                <div id="card-back" class="absolute w-full h-full backface-hidden bg-teal-50 rounded-3xl flex flex-col items-center justify-start p-3 sm:p-6 border-2 border-teal-100 rotate-y-180 overflow-y-auto no-scrollbar pt-4 sm:pt-10">
+                <div id="card-back" class="absolute w-full h-full backface-hidden bg-teal-50 rounded-3xl flex flex-col items-center justify-center p-2 sm:p-4 border-2 border-teal-100 rotate-y-180 overflow-y-auto no-scrollbar">
                     
                     <!-- 상태 1 (뜻) -->
-                    <div id="state-1-content" class="w-full flex flex-col items-center justify-center h-full min-h-full">
+                    <div id="state-1-content" class="w-full flex flex-col items-center justify-center h-full">
                         <p id="word-furi-1" class="text-teal-600 text-lg sm:text-xl font-bold mb-1 h-6"></p>
                         <h2 id="word-back-1" class="text-4xl sm:text-5xl font-extrabold text-slate-800 text-center leading-tight break-keep mb-4"></h2>
                         <!-- 명사일 때 숨겨질 힌트 문구 -->
-                        <p id="hint-conj" class="text-slate-400 text-[11px] mt-auto font-bold bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">👆 활용형 터치 ㄱ</p>
+                        <p id="hint-conj" class="text-slate-400 text-[11px] mt-4 font-bold bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100 hidden">👆 활용형 터치 ㄱ</p>
                     </div>
 
-                    <!-- 상태 2 (상세 활용형 - 여백 최소화) -->
-                    <div id="state-2-content" class="w-full flex flex-col items-center justify-start h-full hidden pt-1 sm:pt-4">
-                        <span id="word-pos" class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold mb-1 shadow-sm border"></span>
-                        <p id="word-furi-2" class="text-teal-600 text-[13px] sm:text-base font-bold mb-0.5"></p>
+                    <!-- 상태 2 (상세 활용형 - 극도로 압축하여 스크롤 방지) -->
+                    <div id="state-2-content" class="w-full flex flex-col items-center justify-center h-full hidden w-[95%] mx-auto">
+                        <span id="word-pos" class="px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 shadow-sm border"></span>
+                        <p id="word-furi-2" class="text-teal-600 text-[12px] sm:text-sm font-bold mb-0"></p>
                         <h2 id="word-kanji-2" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-0.5 leading-tight"></h2>
-                        <h3 id="word-meaning-2" class="text-[13px] sm:text-lg font-bold text-slate-600 mb-2 sm:mb-4 leading-tight"></h3>
+                        <h3 id="word-meaning-2" class="text-[13px] sm:text-sm font-bold text-slate-600 mb-1.5 leading-tight"></h3>
                         
-                        <div id="conjugation-area" class="w-full hidden flex-col gap-1.5 sm:gap-3 pb-1 w-[90%] sm:w-full mx-auto">
-                            <p class="text-[10px] sm:text-xs text-slate-500 font-bold text-center mb-0.5">활용형 연습</p>
-                            <div class="grid grid-cols-2 gap-1 sm:gap-2 w-full">
-                                <button onclick="showConjugation(event, 'te')" class="py-1 sm:py-1.5 bg-white rounded-md text-[11px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">연결형 (て)</button>
-                                <button onclick="showConjugation(event, 'ta')" class="py-1 sm:py-1.5 bg-white rounded-md text-[11px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">과거형 (た)</button>
-                                <button onclick="showConjugation(event, 'nai')" class="py-1 sm:py-1.5 bg-white rounded-md text-[11px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">부정형 (ない)</button>
-                                <button onclick="showConjugation(event, 'masu')" class="py-1 sm:py-1.5 bg-white rounded-md text-[11px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">정중형 (ます)</button>
-                                <button onclick="showConjugation(event, 'kanou')" class="py-1 sm:py-1.5 bg-white rounded-md text-[11px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">가능형</button>
-                                <button onclick="showConjugation(event, 'shouyu')" class="py-1 sm:py-1.5 bg-white rounded-md text-[11px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">청유형</button>
+                        <div id="conjugation-area" class="w-full hidden flex-col gap-1 w-full mx-auto">
+                            <p class="text-[10px] text-slate-500 font-bold text-center mb-0.5">활용형 연습</p>
+                            <div class="grid grid-cols-2 gap-1 w-full">
+                                <button onclick="showConjugation(event, 'te')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">연결형 (て)</button>
+                                <button onclick="showConjugation(event, 'ta')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">과거형 (た)</button>
+                                <button onclick="showConjugation(event, 'nai')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">부정형 (ない)</button>
+                                <button onclick="showConjugation(event, 'masu')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">정중형 (ます)</button>
+                                <button onclick="showConjugation(event, 'kanou')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">가능형</button>
+                                <button onclick="showConjugation(event, 'shouyu')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">청유형</button>
                             </div>
                             
-                            <div class="mt-1 p-2 sm:p-3 bg-white rounded-lg border border-teal-100 text-center shadow-inner min-h-[50px] flex flex-col justify-center">
-                                <p id="conj-result" class="text-lg sm:text-xl font-black text-teal-700 mb-0.5 transition-opacity duration-200 break-keep leading-none">버튼 눌러</p>
-                                <p id="conj-rule" class="text-[9px] sm:text-[11px] text-slate-500 font-medium break-keep leading-tight"></p>
+                            <div class="mt-1 p-1.5 bg-white rounded-lg border border-teal-100 text-center shadow-inner min-h-[45px] flex flex-col justify-center">
+                                <p id="conj-result" class="text-base sm:text-xl font-black text-teal-700 mb-0 transition-opacity duration-200 break-keep leading-none">버튼 눌러</p>
+                                <p id="conj-rule" class="text-[9px] sm:text-[11px] text-slate-500 font-medium break-keep leading-tight mt-0.5"></p>
                             </div>
                         </div>
                         <p id="no-conj-msg" class="text-xs text-slate-400 mt-2 hidden font-bold bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">활용형 X</p>
@@ -123,7 +126,7 @@
             </div>
         </div>
 
-        <div class="w-full flex justify-between items-center gap-2 mt-2 shrink-0 pb-1 sm:pb-2">
+        <div class="w-full flex justify-between items-center gap-2 mt-1 shrink-0 pb-1 sm:pb-2">
             <button onclick="prevCard()" class="flex-1 py-3 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors text-[13px] sm:text-base">👈 이전</button>
             <button onclick="shuffleCards(true)" class="p-3 sm:p-4 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors text-base sm:text-xl" title="섞기">🔀</button>
             <button onclick="nextCard()" class="flex-1 py-3 bg-teal-600 rounded-2xl text-white font-bold shadow-md shadow-teal-200 hover:bg-teal-700 transition-colors text-[13px] sm:text-base">다음 👉</button>
@@ -195,17 +198,17 @@
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     /* 👇👇 여기에 본인의 파이어베이스 키를 덮어쓰세요 👇👇 */
-    const firebaseConfig = {
-        apiKey: "AIzaSyC3XzjiGHG_1y5DOZjBy4lTHuLb_ElWsUs",
-        authDomain: "jjnihongo-9d3a8.firebaseapp.com",
-        projectId: "jjnihongo-9d3a8",
-        storageBucket: "jjnihongo-9d3a8.firebasestorage.app",
-        messagingSenderId: "1050162935933",
-        appId: "1:1050162935933:web:779a117e7e7d3e934e5914",
-        measurementId: "G-8NM7V62JFE"
+const firebaseConfig = {
+  apiKey: "AIzaSyC3XzjiGHG_1y5DOZjBy4lTHuLb_ElWsUs",
+  authDomain: "jjnihongo-9d3a8.firebaseapp.com",
+  projectId: "jjnihongo-9d3a8",
+  storageBucket: "jjnihongo-9d3a8.firebasestorage.app",
+  messagingSenderId: "1050162935933",
+  appId: "1:1050162935933:web:779a117e7e7d3e934e5914",
+  measurementId: "G-8NM7V62JFE"
     };
 
-    const appId = 'nihongo-sync-app';
+  const appId = 'nihongo-sync-app';
     let app, db, auth;
     let currentUser = null;
 
@@ -445,7 +448,7 @@
                 res.ta = { text: stemK + "いた", rule: `1그룹(${tail}): 어미 지우고 いた 결합 (이음편)` };
             } else if (tail === 'ぐ') {
                 res.te = { text: stemK + "いで", rule: `1그룹(${tail}): 어미 지우고 いで 결합 (이음편)` };
-                res.ta = { text: stemK + "いだ", rule: `1그룹(${tail}): 어미 지우고 い다 결합 (이음편)` };
+                res.ta = { text: stemK + "いだ", rule: `1그룹(${tail}): 어미 지우고 いだ 결합 (이음편)` };
             } else if (tail === 'す') {
                 res.te = { text: stemK + "して", rule: `1그룹(${tail}): 어미 지우고 して 결합` };
                 res.ta = { text: stemK + "した", rule: `1그룹(${tail}): 어미 지우고 した 결합` };
@@ -565,7 +568,7 @@
 
     window.updateCardView = function() {
         if (window.activeDeck.length === 0) {
-            document.getElementById('word-front').textContent = "단어가 없어요";
+            document.getElementById('word-front').textContent = "엑셀 올려";
             document.getElementById('progress-text').textContent = "0 / 0";
             return;
         }
@@ -589,9 +592,9 @@
 
         const posEl = document.getElementById('word-pos');
         posEl.textContent = word.pos || "품사 없음";
-        if(word.pos.includes('동사')) posEl.className = "bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold mb-1 border border-rose-200";
-        else if(word.pos.includes('형용사')) posEl.className = "bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold mb-1 border border-blue-200";
-        else posEl.className = "bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold mb-1 border border-slate-200";
+        if(word.pos.includes('동사')) posEl.className = "bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 border border-rose-200";
+        else if(word.pos.includes('형용사')) posEl.className = "bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 border border-blue-200";
+        else posEl.className = "bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 border border-slate-200";
 
         document.getElementById('word-kanji-2').textContent = word.kanji;
         document.getElementById('word-furi-2').textContent = word.furigana ? word.furigana : "";
@@ -600,14 +603,14 @@
         if (word.conj) {
             document.getElementById('conjugation-area').classList.remove('hidden');
             document.getElementById('no-conj-msg').classList.add('hidden');
+            document.getElementById('hint-conj').classList.remove('hidden');
             document.getElementById('conj-result').textContent = "버튼 눌러";
             document.getElementById('conj-result').classList.replace('text-teal-700', 'text-slate-300');
             document.getElementById('conj-rule').textContent = "";
-            document.getElementById('hint-conj').classList.remove('hidden');
         } else {
             document.getElementById('conjugation-area').classList.add('hidden');
             document.getElementById('no-conj-msg').classList.remove('hidden');
-            document.getElementById('hint-conj').classList.add('hidden'); // 명사일 때 활용형 터치 힌트 숨김
+            document.getElementById('hint-conj').classList.add('hidden');
         }
 
         window.updateStatusUI();
@@ -624,14 +627,10 @@
             window.cardState = 1;
             flashcard.classList.add('rotate-y-180');
         } else if (window.cardState === 1) {
-            if (word && !word.conj) {
-                // 활용형(conj)이 없는 명사 등은 3단계를 스킵하고 바로 앞면으로 원복
+            if (!word.conj) {
+                // 명사 등 활용형이 없으면 바로 앞면으로 덮기 스킵
                 window.cardState = 0;
                 flashcard.classList.remove('rotate-y-180');
-                setTimeout(() => {
-                    state1.classList.remove('hidden');
-                    state2.classList.add('hidden');
-                }, 300);
             } else {
                 window.cardState = 2;
                 state1.classList.add('hidden');
@@ -729,28 +728,28 @@
         container.innerHTML = '';
 
         if(window.filteredList.length === 0) {
-            if(window.words.length === 0) container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-[13px] font-bold">엑셀 올려</p>';
-            else container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-[13px] font-bold">필터 조건에 맞는 단어가 없우ㅠ</p>';
+            if(window.words.length === 0) container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-sm font-bold">엑셀 올려</p>';
+            else container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-sm font-bold">필터 조건에 맞는 단어가 없우ㅠ</p>';
             return;
         }
 
         window.filteredList.forEach((word) => {
             const item = document.createElement('div');
-            item.className = "flex justify-between items-center p-2.5 mb-2 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-teal-200 cursor-pointer transition-colors";
+            item.className = "flex justify-between items-center p-3 mb-2 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-teal-200 cursor-pointer transition-colors";
             
             let emoji = '🤪';
             if(word.status === 1) emoji = '🤔';
             if(word.status === 2) emoji = '😎';
 
             item.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <span class="text-base w-5 text-center">${emoji}</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-lg w-6 text-center">${emoji}</span>
                     <div>
-                        <p class="font-bold text-slate-800 text-[13px] sm:text-base">${word.kanji} <span class="text-[11px] font-normal text-slate-400 ml-1">${word.furigana}</span></p>
-                        <p class="text-[11px] text-slate-500 mt-0.5">${word.meaning}</p>
+                        <p class="font-bold text-slate-800 text-sm sm:text-base">${word.kanji} <span class="text-xs font-normal text-slate-400 ml-1">${word.furigana}</span></p>
+                        <p class="text-xs text-slate-500 mt-0.5">${word.meaning}</p>
                     </div>
                 </div>
-                <span class="text-[9px] bg-slate-50 border border-slate-100 px-1.5 py-1 rounded text-slate-500 font-bold ml-2 whitespace-nowrap">${word.pos}</span>
+                <span class="text-[10px] bg-slate-50 border border-slate-100 px-2 py-1 rounded text-slate-500 font-bold ml-2 whitespace-nowrap">${word.pos}</span>
             `;
 
             item.onclick = () => {
