@@ -2,144 +2,162 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>지원재혁のNihongo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
         .perspective-1000 { perspective: 1000px; }
         .transform-style-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
         .transition-transform { transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); }
-        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
 
-    <!-- 헤더 -->
-    <header class="w-full p-4 flex justify-between items-center bg-white shadow-sm z-10 relative">
-        <div class="flex items-center gap-3">
-            <h1 class="text-xl font-bold text-teal-700">🇯🇵 단어장</h1>
-            <!-- 자동 저장 상태 표시기 -->
-            <span id="sync-status" class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-full flex items-center gap-1.5 border border-slate-200">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" id="sync-indicator"></span>
-                <span id="sync-text">자동 저장 됨</span>
-            </span>
+    <header class="w-full p-4 flex flex-col sm:flex-row justify-between items-center bg-white shadow-sm z-10 relative gap-3">
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-between">
+            <h1 class="text-xl font-black text-teal-700 tracking-tight">지원재혁のNihongo</h1>
         </div>
-        <button onclick="openModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
-            데이터 입력
-        </button>
+        
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <div class="flex items-center gap-1 bg-slate-50 p-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <span class="text-[11px] font-bold text-slate-500 pl-1">☁️ 키워드:</span>
+                <input type="text" id="sync-keyword" placeholder="비밀코드" class="text-xs px-2 py-1 border-none bg-transparent w-20 focus:outline-none text-slate-700 font-bold">
+                <button onclick="saveToCloud()" class="bg-teal-100 hover:bg-teal-200 text-teal-700 px-2 py-1.5 rounded-md text-xs font-bold transition-colors">저장</button>
+                <button onclick="loadFromCloud()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1.5 rounded-md text-xs font-bold transition-colors">불러오기</button>
+            </div>
+            
+            <button onclick="openModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
+                센세 엑셀 업로드
+            </button>
+        </div>
     </header>
 
-    <!-- 탭 네비게이션 -->
-    <div class="flex bg-white border-b border-slate-200 shadow-sm z-0 relative">
-        <button onclick="switchTab('flashcard')" id="tab-btn-flashcard" class="flex-1 py-3 text-sm font-bold border-b-2 border-teal-600 text-teal-700 transition-colors">📇 카드 학습</button>
+    <div class="flex bg-white border-b border-slate-200 shadow-sm z-0 relative shrink-0">
+        <button onclick="switchTab('flashcard')" id="tab-btn-flashcard" class="flex-1 py-3 text-sm font-bold border-b-2 border-teal-600 text-teal-700 transition-colors">📇 카드 셔플</button>
         <button onclick="switchTab('list')" id="tab-btn-list" class="flex-1 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors">📋 단어 리스트</button>
     </div>
 
-    <!-- 플래시카드 탭 -->
     <main id="flashcard-tab" class="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 w-full max-w-md mx-auto h-full overflow-hidden">
         
-        <div class="w-full flex justify-between items-center mb-2 px-2">
-            <span id="progress-text" class="text-sm font-bold text-slate-400 bg-white px-3 py-1 rounded-full shadow-sm">0 / 0</span>
+        <div class="w-full flex justify-between items-center mb-2 px-2 shrink-0">
+            <span id="progress-text" class="text-sm font-bold text-slate-400 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">0 / 0</span>
             <div class="flex gap-2">
-                <button onclick="setStatus(0)" id="status-0" class="w-8 h-8 rounded-full text-xs font-bold border-2 border-slate-200 text-slate-400 hover:bg-slate-100 transition-all">미</button>
-                <button onclick="setStatus(1)" id="status-1" class="w-8 h-8 rounded-full text-xs font-bold border-2 border-amber-200 text-amber-400 hover:bg-amber-50 transition-all">중</button>
-                <button onclick="setStatus(2)" id="status-2" class="w-8 h-8 rounded-full text-xs font-bold border-2 border-emerald-200 text-emerald-400 hover:bg-emerald-50 transition-all">완</button>
+                <button onclick="setStatus(0)" id="status-0" class="w-10 h-10 rounded-full text-lg border-2 border-slate-200 hover:bg-slate-100 transition-all shadow-sm opacity-50 grayscale">🤪</button>
+                <button onclick="setStatus(1)" id="status-1" class="w-10 h-10 rounded-full text-lg border-2 border-slate-200 hover:bg-slate-100 transition-all shadow-sm opacity-50 grayscale">🤔</button>
+                <button onclick="setStatus(2)" id="status-2" class="w-10 h-10 rounded-full text-lg border-2 border-slate-200 hover:bg-slate-100 transition-all shadow-sm opacity-50 grayscale">😎</button>
             </div>
         </div>
 
-        <!-- 카드 영역 -->
         <div class="w-full flex-1 perspective-1000 my-2 cursor-pointer relative" onclick="handleCardClick()">
             <div id="flashcard" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-3xl shadow-xl">
                 
-                <!-- 앞면 (State 0) -->
                 <div id="card-front" class="absolute w-full h-full backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-6 border-2 border-slate-100">
-                    <p class="text-slate-400 text-sm mb-4">터치하여 뒤집기</p>
+                    <p class="text-slate-400 text-sm mb-4 font-bold">터치 ㄱ</p>
                     <h2 id="word-front" class="text-4xl sm:text-5xl font-extrabold text-slate-700 text-center leading-tight break-keep"></h2>
                 </div>
 
-                <!-- 뒷면 (State 1 & 2) -->
-                <div id="card-back" class="absolute w-full h-full backface-hidden bg-teal-50 rounded-3xl flex flex-col items-center justify-center p-6 border-2 border-teal-100 rotate-y-180 overflow-y-auto no-scrollbar">
+                <div id="card-back" class="absolute w-full h-full backface-hidden bg-teal-50 rounded-3xl flex flex-col items-center justify-start p-6 border-2 border-teal-100 rotate-y-180 overflow-y-auto no-scrollbar pt-10">
                     
-                    <!-- 상태 1: 뜻 + 요미가나 -->
                     <div id="state-1-content" class="w-full flex flex-col items-center justify-center h-full">
-                        <p id="word-furi-1" class="text-teal-600 text-xl font-medium mb-2 h-8"></p>
+                        <p id="word-furi-1" class="text-teal-600 text-xl font-bold mb-2 h-8"></p>
                         <h2 id="word-back-1" class="text-4xl sm:text-5xl font-extrabold text-slate-800 text-center leading-tight break-keep mb-6"></h2>
-                        <p class="text-slate-400 text-xs mt-auto">한 번 더 터치하면 상세 활용</p>
+                        <p class="text-slate-400 text-xs mt-auto font-bold bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-100">👆 활용형 터치 ㄱ</p>
                     </div>
 
-                    <!-- 상태 2: 상세 활용 및 분석 -->
-                    <div id="state-2-content" class="w-full flex flex-col items-center justify-start h-full hidden pt-4">
-                        <span id="word-pos" class="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold mb-3"></span>
-                        <p id="word-furi-2" class="text-teal-600 text-lg font-medium mb-1"></p>
+                    <div id="state-2-content" class="w-full flex flex-col items-center justify-start h-full hidden">
+                        <span id="word-pos" class="px-3 py-1 rounded-full text-xs font-bold mb-3 shadow-sm border"></span>
+                        <p id="word-furi-2" class="text-teal-600 text-lg font-bold mb-1"></p>
                         <h2 id="word-kanji-2" class="text-3xl font-extrabold text-slate-800 mb-2"></h2>
                         <h3 id="word-meaning-2" class="text-lg font-bold text-slate-600 mb-6"></h3>
                         
-                        <!-- 동사/형용사 활용 버튼 영역 -->
-                        <div id="conjugation-area" class="w-full w-full hidden flex-col gap-3">
-                            <p class="text-xs text-slate-500 font-bold text-center">활용형 확인 (버튼을 누르세요)</p>
+                        <div id="conjugation-area" class="w-full hidden flex-col gap-3">
+                            <p class="text-xs text-slate-500 font-bold text-center mb-1">활용형 연습</p>
                             <div class="grid grid-cols-2 gap-2 w-full">
-                                <button onclick="showConjugation(event, 'te')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">연결형(て)</button>
-                                <button onclick="showConjugation(event, 'ta')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">과거형(た)</button>
-                                <button onclick="showConjugation(event, 'nai')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">부정형(ない)</button>
-                                <button onclick="showConjugation(event, 'masu')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">마스형(ます)</button>
+                                <button onclick="showConjugation(event, 'te')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">연결형 (て)</button>
+                                <button onclick="showConjugation(event, 'ta')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">과거형 (た)</button>
+                                <button onclick="showConjugation(event, 'nai')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">부정형 (ない)</button>
+                                <button onclick="showConjugation(event, 'masu')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">정중형 (ます)</button>
                                 <button onclick="showConjugation(event, 'kanou')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">가능형</button>
                                 <button onclick="showConjugation(event, 'shouyu')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">청유형</button>
                             </div>
-                            <div class="mt-4 p-3 bg-white rounded-xl border border-teal-100 text-center shadow-inner min-h-[60px] flex flex-col justify-center">
-                                <p id="conj-result" class="text-2xl font-bold text-teal-700 mb-1">버튼을 선택하세요</p>
-                                <p id="conj-rule" class="text-[11px] text-slate-500"></p>
+                            
+                            <div class="mt-3 p-4 bg-white rounded-xl border border-teal-100 text-center shadow-inner min-h-[85px] flex flex-col justify-center">
+                                <p id="conj-result" class="text-2xl font-black text-teal-700 mb-1.5 transition-opacity duration-200 break-keep">버튼 눌러</p>
+                                <p id="conj-rule" class="text-[11px] text-slate-500 font-medium break-keep leading-tight"></p>
                             </div>
                         </div>
-                        <p id="no-conj-msg" class="text-sm text-slate-400 mt-10 hidden">이 단어는 별도의 활용 정보가 없습니다.</p>
+                        <p id="no-conj-msg" class="text-sm text-slate-400 mt-10 hidden font-bold bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm">활용형 X</p>
                     </div>
-
                 </div>
             </div>
         </div>
 
-        <div class="w-full flex justify-between items-center gap-3 mt-4">
+        <div class="w-full flex justify-between items-center gap-3 mt-4 shrink-0">
             <button onclick="prevCard()" class="flex-1 py-4 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors">👈 이전</button>
-            <button onclick="shuffleCards()" class="p-4 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors" title="섞기">🔀</button>
+            <button onclick="shuffleCards(true)" class="p-4 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors text-xl" title="섞기">🔀</button>
             <button onclick="nextCard()" class="flex-1 py-4 bg-teal-600 rounded-2xl text-white font-bold shadow-md shadow-teal-200 hover:bg-teal-700 transition-colors">다음 👉</button>
         </div>
     </main>
 
-    <!-- 단어 리스트 탭 -->
     <main id="list-tab" class="hidden flex-1 w-full max-w-2xl mx-auto h-full overflow-hidden flex flex-col p-4">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 overflow-hidden flex flex-col">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h2 class="font-bold text-slate-700">전체 단어 리스트 (<span id="list-count">0</span>)</h2>
             </div>
-            <div class="flex-1 overflow-y-auto p-4" id="word-list-container">
-                <!-- 리스트 내용이 여기에 렌더링 됩니다 -->
+            
+            <!-- 필터 영역 -->
+            <div class="p-3 bg-white border-b border-slate-100 flex flex-col gap-2 shrink-0 shadow-sm z-10">
+                <div class="flex gap-2">
+                    <select id="filter-status" onchange="applyFilters()" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-2 py-2 font-bold focus:outline-none focus:border-teal-500 cursor-pointer">
+                        <option value="all">암기 단계: 전체</option>
+                        <option value="0">🤪 미암기</option>
+                        <option value="1">🤔 학습중</option>
+                        <option value="2">😎 완벽함</option>
+                    </select>
+                    <select id="filter-pos" onchange="applyFilters()" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-2 py-2 font-bold focus:outline-none focus:border-teal-500 cursor-pointer">
+                        <option value="all">품사별: 전체</option>
+                        <option value="명사">명사</option>
+                        <option value="동사">동사</option>
+                        <option value="이형용사">이형용사</option>
+                        <option value="나형용사">나형용사</option>
+                        <option value="부사">부사</option>
+                    </select>
+                </div>
+                <button id="btn-filtered-shuffle" onclick="shuffleFiltered()" class="w-full py-2 bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold rounded-lg text-sm transition-colors hidden shadow-sm border border-teal-200">
+                    이 단어로만 셔플하기 (0개)
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-2 sm:p-4" id="word-list-container">
+                <!-- 리스트 내용 렌더링 -->
             </div>
         </div>
     </main>
 
-    <!-- 메시지 토스트 -->
-    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50">
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50 whitespace-nowrap">
         메시지
     </div>
 
-    <!-- 데이터 입력 모달 (파일 업로드) -->
-    <div id="data-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity z-50">
+    <div id="data-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity z-50">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col transform translate-y-4 transition-transform duration-300" id="data-modal-content">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h2 class="font-bold text-slate-800 flex items-center gap-2">📥 엑셀 파일 업로드</h2>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2">✕</button>
+                <h2 class="font-black text-slate-800 flex items-center gap-2">📥 센세 엑셀 업로드</h2>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">✕</button>
             </div>
             <div class="p-6 flex-1 text-sm text-slate-600 flex flex-col gap-4">
-                <p>가지고 계신 엑셀 파일(취합리포트 등)을 선택해 주세요. 앱이 자동으로 정리하고 동사 활용형을 계산합니다.</p>
-                
+                <p class="font-medium text-slate-500">엑셀 파일 올리면 형태 분석해서 활용 버튼 자동으로 생성 가능!</p>
                 <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors">
                     <input type="file" id="excel-upload" accept=".xlsx, .xls" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"/>
                 </div>
-                
                 <div class="flex gap-2 mt-4">
                     <button onclick="importExcelData(true)" class="flex-1 py-3 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold hover:bg-indigo-100 shadow-sm transition-colors text-sm">➕ 기존 단어에 추가</button>
                     <button onclick="importExcelData(false)" class="flex-1 py-3 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 shadow-md transition-colors text-sm">🔄 새로 덮어쓰기</button>
@@ -148,20 +166,112 @@
         </div>
     </div>
 
-<script>
-    // 상태 및 데이터 관리
-    let words = [];
-    let currentIndex = 0;
-    
-    // 카드 상태: 0(앞면), 1(뒷면-뜻), 2(뒷면-상세)
-    let cardState = 0; 
-    let isKoreanFirst = true; // 현재 카드가 한국어 먼저 보여주는지 여부
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 고주온 배열 (1그룹 동사 활용 엔진용)
+    /* 👇👇 파이어베이스 연동 시 이곳을 본인의 설정값으로 변경하세요 👇👇 */
+    const customFirebaseConfig = {
+  apiKey: "AIzaSyC3XzjiGHG_1y5DOZjBy4lTHuLb_ElWsUs",
+  authDomain: "jjnihongo-9d3a8.firebaseapp.com",
+  projectId: "jjnihongo-9d3a8",
+  storageBucket: "jjnihongo-9d3a8.firebasestorage.app",
+  messagingSenderId: "1050162935933",
+  appId: "1:1050162935933:web:779a117e7e7d3e934e5914",
+  measurementId: "G-8NM7V62JFE"
+    };
+
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : customFirebaseConfig;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'nihongo-sync-app';
+    let app, db, auth;
+    let currentUser = null;
+
+    try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        signInAnonymously(auth).then((userCredential) => {
+            currentUser = userCredential.user;
+            const savedKw = localStorage.getItem('lastKeyword');
+            if(savedKw) document.getElementById('sync-keyword').value = savedKw;
+        }).catch(e => console.log("Firebase Auth 오류"));
+    } catch(e) {
+        console.log("Firebase Init 실패. (설정값을 확인하세요)");
+    }
+
+    window.words = [];        // 엑셀에서 올린 전체 원본 데이터
+    window.activeDeck = [];   // 현재 플래시카드 화면에서 돌리고 있는(학습중인) 덱
+    window.filteredList = []; // 리스트 탭에서 필터링되어 보여지는 리스트
+    
+    window.currentIndex = 0;
+    window.cardState = 0; 
+    window.isKoreanFirst = true;
+
+    window.showToast = function(msg, type='success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-sm font-bold shadow-xl transition-all duration-300 z-50 whitespace-nowrap ${type === 'success' ? 'bg-slate-800 text-white' : 'bg-red-500 text-white'}`;
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 2500);
+    };
+
+    window.saveToCloud = async function() {
+        const kw = document.getElementById('sync-keyword').value.trim();
+        if(!kw) return window.showToast("비밀코드를 입력해줘", "error");
+        
+        localStorage.setItem('lastKeyword', kw);
+        if(!currentUser || !db) return window.showToast("파이어베이스 설정이 필요해!", "error");
+        
+        try {
+            window.showToast("클라우드에 저장할게 ☁️");
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'flashcards', kw);
+            await setDoc(docRef, { words: window.words });
+            window.showToast(`[${kw}] 키워드로 저장 성공! 폰에서도 확인 가능`);
+        } catch(e) {
+            window.showToast("저장 실패. 오류 발생", "error");
+        }
+    };
+
+    window.loadFromCloud = async function() {
+        const kw = document.getElementById('sync-keyword').value.trim();
+        if(!kw) return window.showToast("비밀코드를 입력해줘", "error");
+        
+        localStorage.setItem('lastKeyword', kw);
+        if(!currentUser || !db) return window.showToast("파이어베이스 설정이 필요해!", "error");
+        
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'flashcards', kw);
+            const docSnap = await getDoc(docRef);
+            
+            if(docSnap.exists()) {
+                window.words = docSnap.data().words || [];
+                window.activeDeck = [...window.words]; // 전체 단어를 덱에 복사
+                window.currentIndex = 0;
+                window.applyFilters();
+                window.updateCardView();
+                window.showToast(`데이터 불러오기 완료! (${window.words.length}개)`);
+            } else {
+                window.showToast("불러오기 실패 (나한테 말해줘)", "error");
+            }
+        } catch(e) {
+            window.showToast("데이터 불러오기 실패", "error");
+        }
+    };
+
+    function autoSaveState() {
+        const kw = document.getElementById('sync-keyword').value.trim();
+        if(kw && currentUser && db) {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'flashcards', kw);
+            setDoc(docRef, { words: window.words }).catch(e=>console.log(e));
+        }
+    }
+
     const gojuon = {
         'う': ['わ', 'い', 'う', 'え', 'お'],
         'く': ['か', 'き', 'く', 'け', 'こ'],
-        'ぐ': ['が', 'ぎ', 'ぐ', 'げ', 'ご'],
+        'ぐ': ['が', 'ぎ', 'ぐ', 'げ', 'ご'], 
         'す': ['さ', 'し', 'す', 'せ', 'そ'],
         'つ': ['た', 'ち', 'つ', 'て', 'と'],
         'ぬ': ['な', 'に', 'ぬ', 'ね', 'の'],
@@ -170,141 +280,164 @@
         'る': ['ら', 'り', 'る', 'れ', 'ろ']
     };
 
-    // 앱 시작 시 저장된 데이터 불러오기
-    window.onload = function() {
-        const savedData = localStorage.getItem('japaneseFlashcards');
-        if (savedData) {
-            try {
-                words = JSON.parse(savedData);
-                showToast("저장된 단어장을 불러왔습니다.");
-            } catch (e) {
-                console.error("데이터 로드 실패");
-                words = [];
-            }
-        }
+    window.classifyVerb = function(kanji, furigana, posStr = "") {
+        if (posStr.includes("이형용사") || posStr === "い형용사") return "이형용사";
+        if (posStr.includes("나형용사") || posStr === "な형용사") return "나형용사";
         
-        if (words.length > 0) {
-            shuffleCards(); // 시작 시 섞어서 보여줌
-        } else {
-            showToast("데이터 입력 버튼을 눌러 엑셀을 업로드해주세요.");
-        }
-    };
-
-    // 데이터 저장 함수
-    function saveData() {
-        localStorage.setItem('japaneseFlashcards', JSON.stringify(words));
-        const indicator = document.getElementById('sync-indicator');
-        indicator.classList.remove('bg-emerald-500');
-        indicator.classList.add('bg-amber-400');
-        setTimeout(() => {
-            indicator.classList.remove('bg-amber-400');
-            indicator.classList.add('bg-emerald-500');
-        }, 500);
-    }
-
-    // --- 동사 자동 분류 및 활용 엔진 ---
-    function classifyVerb(kanji, furigana) {
         let word = furigana || kanji;
         if (!word) return "";
 
-        // 3그룹
-        if (word.endsWith("する")) return "3그룹";
-        if (word === "くる" || word === "来る" || kanji.endsWith("来る")) return "3그룹";
-
-        // 1그룹 예외 (자주 쓰이는 것만 우선 적용)
-        const exceptions1 = ["かえる", "はいる", "きる", "しる", "はしる", "しゃべる", "へる"];
+        if (posStr.includes("형용사")) {
+            if(word.endsWith("い")) return "이형용사";
+            return "나형용사";
+        }
+        if (word.endsWith("する") || word === "くる" || kanji.endsWith("来る")) return "3그룹";
+        const exceptions1 = ["かえる", "はいる", "きる", "しる", "はしる", "しゃべる", "へる", "かぎる"];
         if (exceptions1.includes(word)) return "1그룹";
-
         if (word.endsWith("る")) {
             const beforeRu = word.charAt(word.length - 2);
             const iDan = "いきしちにひみりゐ";
             const eDan = "えけせてねへめれゑ";
-            if (iDan.includes(beforeRu) || eDan.includes(beforeRu)) {
-                return "2그룹";
-            }
+            if (iDan.includes(beforeRu) || eDan.includes(beforeRu)) return "2그룹";
             return "1그룹";
         }
-        
-        // 그 외 う단으로 끝나면 1그룹
         return "1그룹";
-    }
+    };
 
-    function generateConjugations(kanji, furigana, group) {
+    window.generateConjugations = function(kanji, furigana, group) {
         let baseK = kanji.trim();
         let baseF = furigana.trim() || baseK;
+        
+        let res = {
+            te: { text: "-", rule: "" }, ta: { text: "-", rule: "" },
+            nai: { text: "-", rule: "" }, masu: { text: "-", rule: "" },
+            kanou: { text: "-", rule: "" }, shouyu: { text: "-", rule: "" }
+        };
+        
+        if (group === "이형용사") {
+            let stem = baseK.endsWith('い') ? baseK.slice(0, -1) : baseK;
+            if (baseK === "いい" || baseK === "よい" || baseF === "いい" || baseF === "よい") {
+                stem = "よ"; baseK = "いい";
+                res.te = { text: stem + "くて", rule: "예외(いい): 어간을 よ로 바꾸고 くて 결합" };
+                res.ta = { text: stem + "かった", rule: "예외(いい): 어간을 よ로 바꾸고 かった 결합" };
+                res.nai = { text: stem + "くない", rule: "예외(いい): 어간을 よ로 바꾸고 くない 결합" };
+                res.masu = { text: baseK + "です", rule: "이형용사: 기본형에 です 결합" };
+                res.kanou = { text: "-", rule: "해당 없음" };
+                res.shouyu = { text: stem + "かろう", rule: "예외(いい): 어간을 よ로 바꾸고 かろう 결합" };
+            } else {
+                res.te = { text: stem + "くて", rule: "이형용사: 어미 い를 지우고 くて 결합" };
+                res.ta = { text: stem + "かった", rule: "이형용사: 어미 い를 지우고 かった 결합" };
+                res.nai = { text: stem + "くない", rule: "이형용사: 어미 い를 지우고 くない 결합" };
+                res.masu = { text: baseK + "です", rule: "이형용사: 기본형에 です 결합" };
+                res.kanou = { text: "-", rule: "해당 없음" };
+                res.shouyu = { text: stem + "かろう", rule: "이형용사: 어미 い를 지우고 かろう 결합" };
+            }
+            return res;
+        }
+
+        if (group === "나형용사") {
+            let stem = baseK;
+            if (baseK.endsWith('だ') || baseK.endsWith('な')) stem = baseK.slice(0, -1);
+            res.te = { text: stem + "で", rule: "나형용사: 어미 だ/な 지우고 で 결합" };
+            res.ta = { text: stem + "だった", rule: "나형용사: 어미 지우고 だった 결합" };
+            res.nai = { text: stem + "ではない (또는 じゃない)", rule: "나형용사: 어미 지우고 ではない 결합" };
+            res.masu = { text: stem + "です", rule: "나형용사: 어미 지우고 です 결합" };
+            res.kanou = { text: "-", rule: "해당 없음" };
+            res.shouyu = { text: stem + "だろう", rule: "나형용사: 어미 지우고 だろう 결합" };
+            return res;
+        }
 
         let tail = baseF.slice(-1);
         let stemK = baseK.endsWith(tail) ? baseK.slice(0, -1) : baseK;
-        if (baseK.endsWith('来る')) stemK = baseK.slice(0, -2); // 예외 처리
-
-        let te="", ta="", nai="", masu="", kanou="", shouyu="", rule="";
+        if (baseK.endsWith('来る')) stemK = baseK.slice(0, -2);
 
         if (group === "3그룹") {
             if (baseF.endsWith("する")) {
-                stemK = baseK.endsWith("する") ? baseK.slice(0, -2) : baseK;
-                te="して"; ta="した"; nai="しない"; masu="します"; kanou="できる"; shouyu="しよう";
-                rule="3그룹 불규칙: する → して / しない 등";
+                let s = baseK.endsWith("する") ? baseK.slice(0, -2) : baseK;
+                res.te = { text: s + "して", rule: "3그룹(する): して로 불규칙 변형" };
+                res.ta = { text: s + "した", rule: "3그룹(する): した로 불규칙 변형" };
+                res.nai = { text: s + "しない", rule: "3그룹(する): しない로 불규칙 변형" };
+                res.masu = { text: s + "します", rule: "3그룹(する): します로 불규칙 변형" };
+                res.kanou = { text: (s === baseK) ? "できる" : s + "できる", rule: "3그룹(する): できる로 불규칙 변형" };
+                res.shouyu = { text: s + "しよう", rule: "3그룹(する): しよう로 불규칙 변형" };
             } else { 
-                stemK = baseK.endsWith("来る") || baseK.endsWith("くる") ? baseK.slice(0, -2) : baseK;
-                te="きて"; ta="きた"; nai="こない"; masu="きます"; kanou="こられる"; shouyu="こよう";
-                rule="3그룹 불규칙: くる → きて / こない 등";
+                let s = baseK.endsWith("来る") || baseK.endsWith("くる") ? baseK.slice(0, -2) : baseK;
+                res.te = { text: s + "きて", rule: "3그룹(くる): きて로 불규칙 변형" };
+                res.ta = { text: s + "きた", rule: "3그룹(くる): きた로 불규칙 변형" };
+                res.nai = { text: s + "こない", rule: "3그룹(くる): こない로 불규칙 변형" };
+                res.masu = { text: s + "きます", rule: "3그룹(くる): きます로 불규칙 변형" };
+                res.kanou = { text: s + "こられる", rule: "3그룹(くる): こられる로 불규칙 변형" };
+                res.shouyu = { text: s + "こよう", rule: "3그룹(くる): こよう로 불규칙 변형" };
             }
-            return {
-                te: stemK+te, ta: stemK+ta, nai: stemK+nai, masu: stemK+masu, 
-                kanou: (baseF.endsWith("する") && stemK === baseK) ? "できる" : stemK+kanou, 
-                shouyu: stemK+shouyu, rule
-            };
+            return res;
         }
-
+        
         if (group === "2그룹") {
-            te="て"; ta="た"; nai="ない"; masu="ます"; kanou="られる"; shouyu="よう";
-            rule="2그룹: 어미 る 삭제 + て / ない / ます 등";
-            return { te:stemK+te, ta:stemK+ta, nai:stemK+nai, masu:stemK+masu, kanou:stemK+kanou, shouyu:stemK+shouyu, rule };
+            res.te = { text: stemK + "て", rule: "2그룹: 어미 る 지우고 て 결합" };
+            res.ta = { text: stemK + "た", rule: "2그룹: 어미 る 지우고 た 결합" };
+            res.nai = { text: stemK + "ない", rule: "2그룹: 어미 る 지우고 ない 결합" };
+            res.masu = { text: stemK + "ます", rule: "2그룹: 어미 る 지우고 ます 결합" };
+            res.kanou = { text: stemK + "られる", rule: "2그룹: 어미 る 지우고 られる 결합" };
+            res.shouyu = { text: stemK + "よう", rule: "2그룹: 어미 る 지우고 よう 결합" };
+            return res;
         }
 
-        // 1그룹
+        const keigo5 = ["いらっしゃる", "おっしゃる", "なさる", "くださる", "ござる"];
+        let isKeigo = keigo5.includes(baseF) || keigo5.includes(baseK);
+
         if (baseK === "行く" || baseF === "いく") {
-            te="って"; ta="った"; nai="かない"; masu="きます"; kanou="ける"; shouyu="こう";
-            rule="1그룹 예외 (行く): いく → いって / いった";
-            return { te: stemK+te, ta: stemK+ta, nai: stemK+nai, masu: stemK+masu, kanou: stemK+kanou, shouyu: stemK+shouyu, rule };
-        }
+            res.te = { text: stemK + "って", rule: "예외(行く): いって로 불규칙 변형" };
+            res.ta = { text: stemK + "った", rule: "예외(行く): いった로 불규칙 변형" };
+            res.nai = { text: stemK + "かない", rule: "1그룹(く): 아단(か)으로 바꾸고 ない" };
+            res.masu = { text: stemK + "きます", rule: "1그룹(く): 이단(き)으로 바꾸고 ます" };
+            res.kanou = { text: stemK + "ける", rule: "1그룹(く): 에단(け)으로 바꾸고 る" };
+            res.shouyu = { text: stemK + "こう", rule: "1그룹(く): 오단(こ)으로 바꾸고 う" };
+            return res;
+        } 
 
         if (gojuon[tail]) {
             let row = gojuon[tail];
-            // 아단(ない), 이단(ます), 에단(가능), 오단(청유)
-            nai = row[0] + 'ない';
-            masu = row[1] + 'ます';
-            kanou = row[3] + 'る';
-            shouyu = row[4] + 'う';
+            
+            if (tail === 'う') {
+                res.nai = { text: stemK + 'わない', rule: "1그룹(う): 예외적으로 わ로 바꾸고 ない 결합" };
+            } else {
+                res.nai = { text: stemK + row[0] + 'ない', rule: `1그룹(${tail}): 아단(${row[0]})으로 바꾸고 ない 결합` };
+            }
+
+            if (isKeigo) {
+                res.masu = { text: stemK + 'います', rule: `예외(5단 경어): ります가 아닌 います로 불규칙 변형` };
+            } else {
+                res.masu = { text: stemK + row[1] + 'ます', rule: `1그룹(${tail}): 이단(${row[1]})으로 바꾸고 ます 결합` };
+            }
+
+            res.kanou = { text: stemK + row[3] + 'る', rule: `1그룹(${tail}): 에단(${row[3]})으로 바꾸고 る 결합` };
+            res.shouyu = { text: stemK + row[4] + 'う', rule: `1그룹(${tail}): 오단(${row[4]})으로 바꾸고 う 결합` };
 
             if (tail === 'う' || tail === 'つ' || tail === 'る') {
-                te="って"; ta="った";
-                rule=`1그룹 (う/つ/る): 어미가 ${tail} → って/った`;
-                if(tail==='う') nai='わない'; // 예외: あない 가 아니라 わない
+                res.te = { text: stemK + "って", rule: `1그룹(${tail}): 어미 지우고 って 결합 (촉음편)` };
+                res.ta = { text: stemK + "った", rule: `1그룹(${tail}): 어미 지우고 った 결합 (촉음편)` };
             } else if (tail === 'む' || tail === 'ぶ' || tail === 'ぬ') {
-                te="んで"; ta="んだ";
-                rule=`1그룹 (む/ぶ/ぬ): 어미가 ${tail} → んで/んだ`;
+                res.te = { text: stemK + "んで", rule: `1그룹(${tail}): 어미 지우고 んで 결합 (발음편)` };
+                res.ta = { text: stemK + "んだ", rule: `1그룹(${tail}): 어미 지우고 んだ 결합 (발음편)` };
             } else if (tail === 'く') {
-                te="いて"; ta="いた";
-                rule="1그룹 (く): 어미가 く → いて/いた";
+                res.te = { text: stemK + "いて", rule: `1그룹(${tail}): 어미 지우고 いて 결합 (이음편)` };
+                res.ta = { text: stemK + "いた", rule: `1그룹(${tail}): 어미 지우고 いた 결합 (이음편)` };
             } else if (tail === 'ぐ') {
-                te="いで"; ta="いだ";
-                rule="1그룹 (ぐ): 어미가 ぐ → いで/いだ";
+                res.te = { text: stemK + "いで", rule: `1그룹(${tail}): 어미 지우고 いで 결합 (이음편)` };
+                res.ta = { text: stemK + "いだ", rule: `1그룹(${tail}): 어미 지우고 いだ 결합 (이음편)` };
             } else if (tail === 'す') {
-                te="して"; ta="した";
-                rule="1그룹 (す): 어미가 す → して/した";
+                res.te = { text: stemK + "して", rule: `1그룹(${tail}): 어미 지우고 して 결합` };
+                res.ta = { text: stemK + "した", rule: `1그룹(${tail}): 어미 지우고 した 결합` };
             }
         }
+        
+        return res;
+    };
 
-        return { te: stemK+te, ta: stemK+ta, nai: stemK+nai, masu: stemK+masu, kanou: stemK+kanou, shouyu: stemK+shouyu, rule };
-    }
-    // ------------------------------------
-
-    // 엑셀 데이터 파싱 및 추가
-    function importExcelData(isAppend) {
+    window.importExcelData = function(isAppend) {
         const fileInput = document.getElementById('excel-upload');
         if (!fileInput.files || fileInput.files.length === 0) {
-            showToast('엑셀 파일을 선택해주세요.', 'error');
+            window.showToast('파일 먼저 올려', 'error');
             return;
         }
 
@@ -313,33 +446,30 @@
 
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
+            const workbook = window.XLSX.read(data, {type: 'array'});
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1}); // 2차원 배열로 가져오기
+            const jsonData = window.XLSX.utils.sheet_to_json(firstSheet, {header: 1});
 
             let newWords = [];
-            
-            // 데이터 파싱 및 클렌징 (row[0]:번호, row[1]:단어, row[2]:히라가나, row[3]:뜻, row[4]:품사)
-            for (let i = 1; i < jsonData.length; i++) { // 첫 줄(헤더) 건너뜀
+            for (let i = 1; i < jsonData.length; i++) { 
                 const row = jsonData[i];
-                if (!row || row.length < 3) continue; // 빈 줄 무시
+                if (!row || row.length < 4) continue;
 
                 let kanji = (row[1] || '').toString().trim();
                 let furigana = (row[2] || '').toString().trim();
                 let meaning = (row[3] || '').toString().trim();
                 let pos = (row[4] || '').toString().trim();
 
-                // 구분선이나 헤더 다시 나온 경우 무시
                 if (kanji.includes('──') || kanji === '일본어' || kanji === '단어' || !meaning) continue;
-                if (!kanji && furigana) kanji = furigana; // 한자가 없고 히라가나만 있는 경우
+                if (!kanji && furigana) kanji = furigana;
 
                 let group = "";
                 let conj = null;
 
-                if (pos.includes("동사")) {
-                    group = classifyVerb(kanji, furigana);
-                    pos = `${group} 동사`;
-                    conj = generateConjugations(kanji, furigana, group);
+                if (pos.includes("동사") || pos.includes("형용사") || pos === "い형용사" || pos === "な형용사") {
+                    group = window.classifyVerb(kanji, furigana, pos);
+                    pos = group + (pos.includes("동사") ? " 동사" : ""); 
+                    conj = window.generateConjugations(kanji, furigana, group);
                 }
 
                 newWords.push({
@@ -350,246 +480,282 @@
                     pos: pos,
                     group: group,
                     conj: conj,
-                    status: 0
+                    status: 0 // 0:🤪, 1:🤔, 2:😎
                 });
             }
 
             if (newWords.length > 0) {
-                if (isAppend) {
-                    words = words.concat(newWords);
-                } else {
-                    words = newWords;
-                }
+                window.words = isAppend ? window.words.concat(newWords) : newWords;
+                window.activeDeck = [...window.words]; // 전체 단어를 학습 덱에 할당
+                window.currentIndex = 0;
                 
-                currentIndex = 0;
-                saveData(); // 로컬 저장소에 저장
-                updateCardView();
-                renderList();
+                window.applyFilters(); // 필터 갱신 및 리스트 렌더링
+                window.updateCardView();
                 
-                showToast(`${newWords.length}개의 단어가 성공적으로 ${isAppend ? '추가' : '덮어쓰기'} 되었습니다!`);
-                
+                window.showToast(`${newWords.length}개 단어 ${isAppend ? '추가' : '덮어쓰기'} 완료! (저장 버튼 클릭 ㄱ)`);
                 fileInput.value = '';
-                closeModal();
+                window.closeModal();
             } else {
-                showToast('유효한 단어 데이터를 찾지 못했습니다.', 'error');
+                window.showToast('데이터를 못 찾았어.', 'error');
             }
         };
-
         reader.readAsArrayBuffer(file);
-    }
+    };
 
-    // 카드 뷰 업데이트
-    function updateCardView() {
-        if (words.length === 0) {
-            document.getElementById('word-front').textContent = "단어가 없습니다.";
+    window.applyFilters = function() {
+        const statusVal = document.getElementById('filter-status').value;
+        const posVal = document.getElementById('filter-pos').value;
+        
+        window.filteredList = window.words.filter(word => {
+            let matchStatus = true;
+            if(statusVal !== 'all') {
+                matchStatus = word.status === parseInt(statusVal);
+            }
+            
+            let matchPos = true;
+            if(posVal !== 'all') {
+                if(posVal === '동사') {
+                    matchPos = word.pos.includes('동사'); // 1,2,3그룹 모두 통과
+                } else {
+                    matchPos = word.pos.includes(posVal);
+                }
+            }
+            return matchStatus && matchPos;
+        });
+        
+        const btn = document.getElementById('btn-filtered-shuffle');
+        if(statusVal !== 'all' || posVal !== 'all') {
+            btn.classList.remove('hidden');
+            btn.textContent = `이 단어로만 셔플하기 (${window.filteredList.length}개)`;
+        } else {
+            btn.classList.add('hidden');
+        }
+        
+        window.renderList();
+    };
+
+    window.shuffleFiltered = function() {
+        if(window.filteredList.length === 0) {
+            return window.showToast("셔플할 단어가 없어!", "error");
+        }
+        window.activeDeck = [...window.filteredList]; // 필터링된 배열을 학습 덱으로 지정
+        window.shuffleCards(true); 
+        window.switchTab('flashcard');
+        window.showToast("선택한 단어로 셔플 완료! 🔀");
+    };
+
+    window.updateCardView = function() {
+        if (window.activeDeck.length === 0) {
+            document.getElementById('word-front').textContent = "단어가 없어.";
             document.getElementById('progress-text').textContent = "0 / 0";
             return;
         }
 
-        const word = words[currentIndex];
-        document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${words.length}`;
+        const word = window.activeDeck[window.currentIndex];
+        document.getElementById('progress-text').textContent = `${window.currentIndex + 1} / ${window.activeDeck.length}`;
         
-        // 랜덤으로 한국어/일본어(한자) 앞면 결정 (요미가나 제외)
-        isKoreanFirst = Math.random() < 0.5;
+        window.isKoreanFirst = Math.random() < 0.5;
+        window.cardState = 0;
         
-        // 상태 초기화
-        cardState = 0;
         const flashcard = document.getElementById('flashcard');
         flashcard.classList.remove('rotate-y-180');
         
-        // 뒷면 상태 1 콘텐츠 활성화, 상태 2 숨김
         document.getElementById('state-1-content').classList.remove('hidden');
         document.getElementById('state-2-content').classList.add('hidden');
 
-        // 값 할당
-        const frontText = isKoreanFirst ? word.meaning : word.kanji;
-        const back1Text = isKoreanFirst ? word.kanji : word.meaning;
+        document.getElementById('word-front').textContent = window.isKoreanFirst ? word.meaning : word.kanji;
         
-        document.getElementById('word-front').textContent = frontText;
-        
-        // 뒷면 상태 1 (뜻과 함께 요미가나 표시)
-        document.getElementById('word-back-1').textContent = back1Text;
-        document.getElementById('word-furi-1').textContent = word.furigana ? `[ ${word.furigana} ]` : "";
+        document.getElementById('word-back-1').textContent = window.isKoreanFirst ? word.kanji : word.meaning;
+        document.getElementById('word-furi-1').textContent = (!window.isKoreanFirst && word.furigana) ? `[ ${word.furigana} ]` : (window.isKoreanFirst && word.furigana ? `[ ${word.furigana} ]` : "");
 
-        // 뒷면 상태 2 (상세 정보)
-        document.getElementById('word-pos').textContent = word.pos || "품사 없음";
-        document.getElementById('word-pos').className = word.pos.includes('동사') ? "bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-bold mb-3" : "bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold mb-3";
+        const posEl = document.getElementById('word-pos');
+        posEl.textContent = word.pos || "품사 없음";
+        if(word.pos.includes('동사')) posEl.className = "bg-rose-100 text-rose-700 px-3 py-1.5 rounded-full text-xs font-bold mb-3 border border-rose-200";
+        else if(word.pos.includes('형용사')) posEl.className = "bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold mb-3 border border-blue-200";
+        else posEl.className = "bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold mb-3 border border-slate-200";
+
         document.getElementById('word-kanji-2').textContent = word.kanji;
         document.getElementById('word-furi-2').textContent = word.furigana ? word.furigana : "";
         document.getElementById('word-meaning-2').textContent = word.meaning;
 
-        // 활용형 버튼 세팅
         if (word.conj) {
             document.getElementById('conjugation-area').classList.remove('hidden');
             document.getElementById('no-conj-msg').classList.add('hidden');
-            document.getElementById('conj-result').textContent = "버튼을 선택하세요";
-            document.getElementById('conj-rule').textContent = word.conj.rule;
+            document.getElementById('conj-result').textContent = "버튼 눌러";
+            document.getElementById('conj-result').classList.replace('text-teal-700', 'text-slate-300');
+            document.getElementById('conj-rule').textContent = "";
         } else {
             document.getElementById('conjugation-area').classList.add('hidden');
             document.getElementById('no-conj-msg').classList.remove('hidden');
         }
 
-        updateStatusUI();
-    }
+        window.updateStatusUI();
+    };
 
-    // 카드 클릭(터치) 시 상태 변경 로직
-    function handleCardClick() {
-        if (words.length === 0) return;
+    window.handleCardClick = function() {
+        if (window.activeDeck.length === 0) return;
         const flashcard = document.getElementById('flashcard');
         const state1 = document.getElementById('state-1-content');
         const state2 = document.getElementById('state-2-content');
 
-        if (cardState === 0) {
-            // 0 -> 1 (뒤집기)
-            cardState = 1;
+        if (window.cardState === 0) {
+            window.cardState = 1;
             flashcard.classList.add('rotate-y-180');
-        } else if (cardState === 1) {
-            // 1 -> 2 (뒷면 콘텐츠 크로스페이드)
-            cardState = 2;
+        } else if (window.cardState === 1) {
+            window.cardState = 2;
             state1.classList.add('hidden');
             state2.classList.remove('hidden');
-        } else if (cardState === 2) {
-            // 2 -> 0 (다시 앞면으로 덮기)
-            cardState = 0;
+        } else if (window.cardState === 2) {
+            window.cardState = 0;
             flashcard.classList.remove('rotate-y-180');
-            // 애니메이션 끝난 후 콘텐츠 원래대로
             setTimeout(() => {
                 state1.classList.remove('hidden');
                 state2.classList.add('hidden');
             }, 300);
         }
-    }
+    };
 
-    // 활용형 버튼 클릭 처리
-    function showConjugation(event, type) {
-        event.stopPropagation(); // 카드 뒤집기 이벤트 방지
-        const word = words[currentIndex];
+    window.showConjugation = function(event, type) {
+        event.stopPropagation();
+        const word = window.activeDeck[window.currentIndex];
         if (!word || !word.conj) return;
 
         const resultEl = document.getElementById('conj-result');
-        let text = "";
-        switch(type) {
-            case 'te': text = word.conj.te; break;
-            case 'ta': text = word.conj.ta; break;
-            case 'nai': text = word.conj.nai; break;
-            case 'masu': text = word.conj.masu; break;
-            case 'kanou': text = word.conj.kanou; break;
-            case 'shouyu': text = word.conj.shouyu; break;
-        }
+        const ruleEl = document.getElementById('conj-rule');
+        
+        let conjData = word.conj[type];
+        if(!conjData) return;
         
         resultEl.style.opacity = '0';
+        ruleEl.style.opacity = '0';
+        
         setTimeout(() => {
-            resultEl.textContent = text;
+            resultEl.textContent = conjData.text;
+            ruleEl.textContent = conjData.rule;
+            resultEl.classList.replace('text-slate-300', 'text-teal-700');
             resultEl.style.opacity = '1';
+            ruleEl.style.opacity = '1';
         }, 150);
-    }
+    };
 
-    // 암기 상태 변경 및 UI 업데이트
-    function setStatus(statusLevel) {
-        if (words.length === 0) return;
-        words[currentIndex].status = statusLevel;
-        updateStatusUI();
-        saveData();
-        renderList(); // 리스트 탭에도 실시간 반영
-    }
+    window.setStatus = function(statusLevel) {
+        if (window.activeDeck.length === 0) return;
+        // activeDeck은 words 배열의 객체를 참조하므로 자동 갱신됨
+        window.activeDeck[window.currentIndex].status = statusLevel; 
+        window.updateStatusUI();
+        window.applyFilters(); // 리스트 탭 필터 다시 적용
+        autoSaveState();
+    };
 
-    function updateStatusUI() {
-        const word = words[currentIndex];
+    window.updateStatusUI = function() {
+        const word = window.activeDeck[window.currentIndex];
         const btns = [document.getElementById('status-0'), document.getElementById('status-1'), document.getElementById('status-2')];
         
-        btns[0].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all border-slate-200 text-slate-400 hover:bg-slate-100";
-        btns[1].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all border-amber-200 text-amber-400 hover:bg-amber-50";
-        btns[2].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all border-emerald-200 text-emerald-400 hover:bg-emerald-50";
+        btns.forEach(btn => {
+            btn.classList.add('opacity-50', 'grayscale', 'border-slate-200');
+            btn.classList.remove('opacity-100', 'grayscale-0', 'border-teal-400', 'bg-teal-50', 'scale-110', 'shadow-md');
+        });
 
-        if(word.status === 0) btns[0].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all bg-slate-500 border-slate-500 text-white scale-110 shadow-md";
-        if(word.status === 1) btns[1].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all bg-amber-400 border-amber-400 text-white scale-110 shadow-md";
-        if(word.status === 2) btns[2].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all bg-emerald-500 border-emerald-500 text-white scale-110 shadow-md";
-    }
-
-    // 이전/다음/섞기
-    function nextCard() {
-        if (words.length > 0) {
-            currentIndex = (currentIndex + 1) % words.length;
-            updateCardView();
+        if(word && word.status !== undefined && btns[word.status]) {
+            btns[word.status].classList.remove('opacity-50', 'grayscale', 'border-slate-200');
+            btns[word.status].classList.add('opacity-100', 'grayscale-0', 'border-teal-400', 'bg-teal-50', 'scale-110', 'shadow-md');
         }
-    }
+    };
+
+    window.nextCard = function() {
+        if (window.activeDeck.length > 0) {
+            window.currentIndex = (window.currentIndex + 1) % window.activeDeck.length;
+            window.updateCardView();
+        }
+    };
     
-    function prevCard() {
-        if (words.length > 0) {
-            currentIndex = (currentIndex - 1 + words.length) % words.length;
-            updateCardView();
+    window.prevCard = function() {
+        if (window.activeDeck.length > 0) {
+            window.currentIndex = (window.currentIndex - 1 + window.activeDeck.length) % window.activeDeck.length;
+            window.updateCardView();
         }
-    }
+    };
 
-    function shuffleCards() {
-        if (words.length === 0) return;
-        for (let i = words.length - 1; i > 0; i--) {
+    window.shuffleCards = function(onlyActive = false) {
+        if (!onlyActive) {
+            // 일반 셔플 버튼을 눌렀을 땐 항상 전체 단어로 리셋해서 섞음
+            if (window.words.length === 0) {
+                return window.showToast("섞을 단어가 없어", "error");
+            }
+            window.activeDeck = [...window.words]; 
+        }
+        
+        for (let i = window.activeDeck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [words[i], words[j]] = [words[j], words[i]];
+            [window.activeDeck[i], window.activeDeck[j]] = [window.activeDeck[j], window.activeDeck[i]];
         }
-        currentIndex = 0;
-        updateCardView();
-        renderList();
-        showToast("카드를 섞었습니다! 🔀");
-    }
+        window.currentIndex = 0;
+        window.updateCardView();
+        
+        if(!onlyActive) {
+            window.showToast("전체 카드 셔플 완료🔀");
+        }
+    };
 
-    // 단어 리스트 렌더링
-    function renderList() {
+    window.renderList = function() {
         const container = document.getElementById('word-list-container');
-        document.getElementById('list-count').textContent = words.length;
+        document.getElementById('list-count').textContent = window.filteredList.length;
         container.innerHTML = '';
 
-        if(words.length === 0) {
-            container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-sm">등록된 단어가 없습니다.</p>';
+        if(window.filteredList.length === 0) {
+            if(window.words.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-sm font-bold">엑셀 올려</p>';
+            } else {
+                container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-sm font-bold">필터 조건에 맞는 단어가 없어.</p>';
+            }
             return;
         }
 
-        words.forEach((word, index) => {
+        window.filteredList.forEach((word) => {
             const item = document.createElement('div');
             item.className = "flex justify-between items-center p-3 mb-2 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-teal-200 cursor-pointer transition-colors";
             
-            let statusDot = '<span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>';
-            if(word.status === 1) statusDot = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>';
-            if(word.status === 2) statusDot = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>';
+            let emoji = '🤪';
+            if(word.status === 1) emoji = '🤔';
+            if(word.status === 2) emoji = '😎';
 
             item.innerHTML = `
                 <div class="flex items-center gap-3">
-                    ${statusDot}
+                    <span class="text-lg w-6 text-center">${emoji}</span>
                     <div>
-                        <p class="font-bold text-slate-800">${word.kanji} <span class="text-xs font-normal text-slate-400 ml-1">${word.furigana}</span></p>
-                        <p class="text-xs text-slate-500">${word.meaning}</p>
+                        <p class="font-bold text-slate-800 text-sm sm:text-base">${word.kanji} <span class="text-xs font-normal text-slate-400 ml-1">${word.furigana}</span></p>
+                        <p class="text-xs text-slate-500 mt-0.5">${word.meaning}</p>
                     </div>
                 </div>
-                <span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500">${word.pos}</span>
+                <span class="text-[10px] bg-slate-50 border border-slate-100 px-2 py-1 rounded text-slate-500 font-bold ml-2 whitespace-nowrap">${word.pos}</span>
             `;
 
-            // 리스트에서 단어 클릭 시 해당 카드로 이동
             item.onclick = () => {
-                currentIndex = index;
-                switchTab('flashcard');
-                updateCardView();
+                // 리스트 클릭 시 필터링된 배열을 학습 덱으로 지정하고 해당 위치로 이동
+                window.activeDeck = [...window.filteredList];
+                window.currentIndex = window.activeDeck.findIndex(w => w.id === word.id);
+                window.switchTab('flashcard');
+                window.updateCardView();
             };
-
             container.appendChild(item);
         });
-    }
+    };
 
-    // 모달, 탭, 토스트 UI 유틸리티
-    function openModal() {
+    window.openModal = () => {
         const m = document.getElementById('data-modal');
         const mc = document.getElementById('data-modal-content');
         m.classList.remove('opacity-0', 'pointer-events-none');
         mc.classList.remove('translate-y-4');
-    }
+    };
 
-    function closeModal() {
+    window.closeModal = () => {
         const m = document.getElementById('data-modal');
         const mc = document.getElementById('data-modal-content');
         m.classList.add('opacity-0', 'pointer-events-none');
         mc.classList.add('translate-y-4');
-    }
+    };
 
-    function switchTab(tabName) {
+    window.switchTab = (tabName) => {
         document.getElementById('flashcard-tab').classList.add('hidden');
         document.getElementById('list-tab').classList.add('hidden');
         document.getElementById('tab-btn-flashcard').classList.replace('border-teal-600', 'border-transparent');
@@ -601,39 +767,33 @@
             document.getElementById('flashcard-tab').classList.remove('hidden');
             document.getElementById('tab-btn-flashcard').classList.replace('border-transparent', 'border-teal-600');
             document.getElementById('tab-btn-flashcard').classList.replace('text-slate-400', 'text-teal-700');
-            updateCardView();
+            window.updateCardView();
         } else {
             document.getElementById('list-tab').classList.remove('hidden');
             document.getElementById('tab-btn-list').classList.replace('border-transparent', 'border-teal-600');
             document.getElementById('tab-btn-list').classList.replace('text-slate-400', 'text-teal-700');
-            renderList();
+            window.applyFilters();
         }
-    }
+    };
 
-    function showToast(msg, type='success') {
-        const toast = document.getElementById('toast');
-        toast.textContent = msg;
-        toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-sm font-bold shadow-xl transition-all duration-300 z-50 ${type === 'success' ? 'bg-slate-800 text-white' : 'bg-red-500 text-white'}`;
-        toast.classList.remove('opacity-0', 'pointer-events-none');
-        setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 2500);
-    }
-
-    // 키보드 조작
     document.addEventListener('keydown', (e) => {
         const dataModal = document.getElementById('data-modal');
         if (!dataModal.classList.contains('pointer-events-none')) return;
         if (!document.getElementById('list-tab').classList.contains('hidden')) return;
 
-        if (e.key === 'ArrowRight') nextCard();
-        else if (e.key === 'ArrowLeft') prevCard();
+        if (e.key === 'ArrowRight') window.nextCard();
+        else if (e.key === 'ArrowLeft') window.prevCard();
         else if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             e.preventDefault();
-            handleCardClick();
+            window.handleCardClick();
         }
-        else if (e.key === '1') setStatus(0);
-        else if (e.key === '2') setStatus(1);
-        else if (e.key === '3') setStatus(2);
+        else if (e.key === '1') window.setStatus(0);
+        else if (e.key === '2') window.setStatus(1);
+        else if (e.key === '3') window.setStatus(2);
     });
+
+    window.updateCardView();
+    window.renderList();
 
 </script>
 </body>
