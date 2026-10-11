@@ -3,33 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- PWA 및 홈 화면 아이콘 설정 -->
     <title>🥋지원재혁のNihongo✏</title>
+    
+    <!-- iOS 사파리 홈 화면 아이콘 -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/197/197604.png">
+    <!-- 안드로이드 크롬 홈 화면 아이콘 -->
+    <link rel="icon" type="image/png" sizes="192x192" href="https://cdn-icons-png.flaticon.com/512/197/197604.png">
+    
+    <!-- iOS 사파리 웹앱 모드 (상단 바 숨김) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- iOS 사파리 상단 상태바 색상 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="재혁의 단어장">
+
+    <!-- 폰트 및 라이브러리 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
     <style>
+        /* 핵심 수정: 모바일 브라우저 하단바 짤림 완벽 방지 */
+        html, body {
+            height: 100%;
+            height: 100dvh; /* 동적 뷰포트 높이 (모바일 메뉴바 제외한 실제 높이) */
+            width: 100%;
+            position: fixed; /* iOS에서 화면 전체가 위아래로 흔들리는 것 방지 */
+            overflow: hidden;
+        }
         body { font-family: 'Noto Sans KR', sans-serif; }
         .perspective-1000 { perspective: 1000px; }
         .transform-style-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
         .transition-transform { transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); }
-        /* 스크롤바 숨기기 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
+<body class="text-slate-800 flex flex-col bg-slate-50">
 
-    <!-- 상단 헤더 (모바일 대응 강화) -->
-    <header class="w-full p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center bg-white shadow-sm z-10 relative gap-3 shrink-0">
-        <div class="flex items-center gap-3 w-full sm:w-auto justify-between">
-            <h1 class="text-lg sm:text-xl font-black text-teal-700 tracking-tight">지원재혁のNihongo</h1>
-        </div>
+    <!-- 상단 헤더 (모바일 사이즈 최적화) -->
+    <header class="w-full p-3 flex flex-col sm:flex-row justify-between items-center bg-white shadow-sm z-10 relative gap-2 shrink-0">
+        <h1 class="text-lg font-black text-teal-700 w-full text-center sm:text-left sm:w-auto tracking-tight">🥋지원재혁のNihongo✏</h1>
         
-        <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+        <div class="flex items-center gap-2 w-full justify-between sm:justify-end sm:w-auto">
             <div class="flex items-center gap-1 bg-slate-50 p-1.5 rounded-lg border border-slate-200 shadow-inner">
                 <span class="text-[11px] font-bold text-slate-500 pl-1">☁️ 키워드:</span>
                 <input type="text" id="sync-keyword" placeholder="비밀코드" class="text-xs px-2 py-1 border-none bg-transparent w-16 sm:w-20 focus:outline-none text-slate-700 font-bold">
@@ -50,7 +71,8 @@
     </div>
 
     <!-- 플래시카드 탭 -->
-    <main id="flashcard-tab" class="flex-1 flex flex-col items-center justify-between p-3 sm:p-6 w-full max-w-md mx-auto h-full overflow-hidden">
+    <!-- pb-6을 주어 아이폰 하단 홈 바(Home Indicator)와 안 겹치게 여백 확보 -->
+    <main id="flashcard-tab" class="flex-1 flex flex-col items-center justify-between p-3 sm:p-6 pb-6 sm:pb-6 w-full max-w-md mx-auto h-full overflow-hidden">
         
         <div class="w-full flex justify-between items-center mb-2 px-2 shrink-0">
             <span id="progress-text" class="text-sm font-bold text-slate-400 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">0 / 0</span>
@@ -61,7 +83,7 @@
             </div>
         </div>
 
-        <!-- 카드 영역 (스크롤 가능하도록 레이아웃 수정) -->
+        <!-- 카드 영역 (스크롤 잘림 방지 구조) -->
         <div class="w-full flex-1 perspective-1000 my-1 sm:my-2 cursor-pointer relative min-h-0" onclick="handleCardClick()">
             <div id="flashcard" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-3xl shadow-xl">
                 
@@ -116,7 +138,7 @@
     </main>
 
     <!-- 단어 리스트 탭 -->
-    <main id="list-tab" class="hidden flex-1 w-full max-w-2xl mx-auto h-full overflow-hidden flex flex-col p-3 sm:p-4">
+    <main id="list-tab" class="hidden flex-1 w-full max-w-2xl mx-auto h-full overflow-hidden flex flex-col p-3 sm:p-4 pb-6">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 overflow-hidden flex flex-col">
             <div class="p-3 sm:p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h2 class="font-bold text-slate-700 text-sm sm:text-base">전체 단어 리스트 (<span id="list-count">0</span>)</h2>
@@ -180,17 +202,17 @@
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     /* 👇👇 여기에 본인의 파이어베이스 키를 덮어쓰세요 👇👇 */
-const firebaseConfig = {
-  apiKey: "AIzaSyC3XzjiGHG_1y5DOZjBy4lTHuLb_ElWsUs",
-  authDomain: "jjnihongo-9d3a8.firebaseapp.com",
-  projectId: "jjnihongo-9d3a8",
-  storageBucket: "jjnihongo-9d3a8.firebasestorage.app",
-  messagingSenderId: "1050162935933",
-  appId: "1:1050162935933:web:779a117e7e7d3e934e5914",
-  measurementId: "G-8NM7V62JFE"
+    const firebaseConfig = {
+      apiKey: "AIzaSyC3XzjiGHG_1y5DOZjBy4lTHuLb_ElWsUs",
+      authDomain: "jjnihongo-9d3a8.firebaseapp.com",
+      projectId: "jjnihongo-9d3a8",
+      storageBucket: "jjnihongo-9d3a8.firebasestorage.app",
+      messagingSenderId: "1050162935933",
+      appId: "1:1050162935933:web:779a117e7e7d3e934e5914",
+      measurementId: "G-8NM7V62JFE"
     };
 
-  const appId = 'nihongo-sync-app';
+    const appId = 'nihongo-sync-app';
     let app, db, auth;
     let currentUser = null;
 
@@ -430,7 +452,7 @@ const firebaseConfig = {
                 res.ta = { text: stemK + "いた", rule: `1그룹(${tail}): 어미 지우고 いた 결합 (이음편)` };
             } else if (tail === 'ぐ') {
                 res.te = { text: stemK + "いで", rule: `1그룹(${tail}): 어미 지우고 いで 결합 (이음편)` };
-                res.ta = { text: stemK + "いだ", rule: `1그룹(${tail}): 어미 지우고 いだ 결합 (이음편)` };
+                res.ta = { text: stemK + "いだ", rule: `1그룹(${tail}): 어미 지우고 い다 결합 (이음편)` };
             } else if (tail === 'す') {
                 res.te = { text: stemK + "して", rule: `1그룹(${tail}): 어미 지우고 して 결합` };
                 res.ta = { text: stemK + "した", rule: `1그룹(${tail}): 어미 지우고 した 결합` };
@@ -550,7 +572,7 @@ const firebaseConfig = {
 
     window.updateCardView = function() {
         if (window.activeDeck.length === 0) {
-            document.getElementById('word-front').textContent = "단어가 없아요";
+            document.getElementById('word-front').textContent = "단어가 없어요";
             document.getElementById('progress-text').textContent = "0 / 0";
             return;
         }
