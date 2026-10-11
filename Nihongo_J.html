@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 일본어 단어장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .transition-transform { transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
+
+    <!-- 헤더 -->
+    <header class="w-full p-4 flex justify-between items-center bg-white shadow-sm z-10 relative">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold text-teal-700">🇯🇵 단어장</h1>
+            <!-- 자동 저장 상태 표시기 -->
+            <span id="sync-status" class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-full flex items-center gap-1.5 border border-slate-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" id="sync-indicator"></span>
+                <span id="sync-text">자동 저장 됨</span>
+            </span>
+        </div>
+        <button onclick="openModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+            데이터 입력
+        </button>
+    </header>
+
+    <!-- 탭 네비게이션 -->
+    <div class="flex bg-white border-b border-slate-200 shadow-sm z-0 relative">
+        <button onclick="switchTab('flashcard')" id="tab-btn-flashcard" class="flex-1 py-3 text-sm font-bold border-b-2 border-teal-600 text-teal-700 transition-colors">📇 카드 학습</button>
+        <button onclick="switchTab('list')" id="tab-btn-list" class="flex-1 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors">📋 단어 리스트</button>
+    </div>
+
+    <!-- 플래시카드 탭 -->
+    <main id="flashcard-tab" class="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 w-full max-w-md mx-auto h-full overflow-hidden">
+        
+        <div class="w-full flex justify-between items-center mb-2 px-2">
+            <span id="progress-text" class="text-sm font-bold text-slate-400 bg-white px-3 py-1 rounded-full shadow-sm">0 / 0</span>
+            <div class="flex gap-2">
+                <button onclick="setStatus(0)" id="status-0" class="w-8 h-8 rounded-full text-xs font-bold border-2 border-slate-200 text-slate-400 hover:bg-slate-100 transition-all">미</button>
+                <button onclick="setStatus(1)" id="status-1" class="w-8 h-8 rounded-full text-xs font-bold border-2 border-amber-200 text-amber-400 hover:bg-amber-50 transition-all">중</button>
+                <button onclick="setStatus(2)" id="status-2" class="w-8 h-8 rounded-full text-xs font-bold border-2 border-emerald-200 text-emerald-400 hover:bg-emerald-50 transition-all">완</button>
+            </div>
+        </div>
+
+        <!-- 카드 영역 -->
+        <div class="w-full flex-1 perspective-1000 my-2 cursor-pointer relative" onclick="handleCardClick()">
+            <div id="flashcard" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-3xl shadow-xl">
+                
+                <!-- 앞면 (State 0) -->
+                <div id="card-front" class="absolute w-full h-full backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-6 border-2 border-slate-100">
+                    <p class="text-slate-400 text-sm mb-4">터치하여 뒤집기</p>
+                    <h2 id="word-front" class="text-4xl sm:text-5xl font-extrabold text-slate-700 text-center leading-tight break-keep"></h2>
+                </div>
+
+                <!-- 뒷면 (State 1 & 2) -->
+                <div id="card-back" class="absolute w-full h-full backface-hidden bg-teal-50 rounded-3xl flex flex-col items-center justify-center p-6 border-2 border-teal-100 rotate-y-180 overflow-y-auto no-scrollbar">
+                    
+                    <!-- 상태 1: 뜻 + 요미가나 -->
+                    <div id="state-1-content" class="w-full flex flex-col items-center justify-center h-full">
+                        <p id="word-furi-1" class="text-teal-600 text-xl font-medium mb-2 h-8"></p>
+                        <h2 id="word-back-1" class="text-4xl sm:text-5xl font-extrabold text-slate-800 text-center leading-tight break-keep mb-6"></h2>
+                        <p class="text-slate-400 text-xs mt-auto">한 번 더 터치하면 상세 활용</p>
+                    </div>
+
+                    <!-- 상태 2: 상세 활용 및 분석 -->
+                    <div id="state-2-content" class="w-full flex flex-col items-center justify-start h-full hidden pt-4">
+                        <span id="word-pos" class="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold mb-3"></span>
+                        <p id="word-furi-2" class="text-teal-600 text-lg font-medium mb-1"></p>
+                        <h2 id="word-kanji-2" class="text-3xl font-extrabold text-slate-800 mb-2"></h2>
+                        <h3 id="word-meaning-2" class="text-lg font-bold text-slate-600 mb-6"></h3>
+                        
+                        <!-- 동사/형용사 활용 버튼 영역 -->
+                        <div id="conjugation-area" class="w-full w-full hidden flex-col gap-3">
+                            <p class="text-xs text-slate-500 font-bold text-center">활용형 확인 (버튼을 누르세요)</p>
+                            <div class="grid grid-cols-2 gap-2 w-full">
+                                <button onclick="showConjugation(event, 'te')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">연결형(て)</button>
+                                <button onclick="showConjugation(event, 'ta')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">과거형(た)</button>
+                                <button onclick="showConjugation(event, 'nai')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">부정형(ない)</button>
+                                <button onclick="showConjugation(event, 'masu')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">마스형(ます)</button>
+                                <button onclick="showConjugation(event, 'kanou')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">가능형</button>
+                                <button onclick="showConjugation(event, 'shouyu')" class="py-2 bg-white rounded-lg text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">청유형</button>
+                            </div>
+                            <div class="mt-4 p-3 bg-white rounded-xl border border-teal-100 text-center shadow-inner min-h-[60px] flex flex-col justify-center">
+                                <p id="conj-result" class="text-2xl font-bold text-teal-700 mb-1">버튼을 선택하세요</p>
+                                <p id="conj-rule" class="text-[11px] text-slate-500"></p>
+                            </div>
+                        </div>
+                        <p id="no-conj-msg" class="text-sm text-slate-400 mt-10 hidden">이 단어는 별도의 활용 정보가 없습니다.</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-between items-center gap-3 mt-4">
+            <button onclick="prevCard()" class="flex-1 py-4 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors">👈 이전</button>
+            <button onclick="shuffleCards()" class="p-4 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors" title="섞기">🔀</button>
+            <button onclick="nextCard()" class="flex-1 py-4 bg-teal-600 rounded-2xl text-white font-bold shadow-md shadow-teal-200 hover:bg-teal-700 transition-colors">다음 👉</button>
+        </div>
+    </main>
+
+    <!-- 단어 리스트 탭 -->
+    <main id="list-tab" class="hidden flex-1 w-full max-w-2xl mx-auto h-full overflow-hidden flex flex-col p-4">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="font-bold text-slate-700">전체 단어 리스트 (<span id="list-count">0</span>)</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4" id="word-list-container">
+                <!-- 리스트 내용이 여기에 렌더링 됩니다 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 메시지 토스트 -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50">
+        메시지
+    </div>
+
+    <!-- 데이터 입력 모달 (파일 업로드) -->
+    <div id="data-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity z-50">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col transform translate-y-4 transition-transform duration-300" id="data-modal-content">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="font-bold text-slate-800 flex items-center gap-2">📥 엑셀 파일 업로드</h2>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2">✕</button>
+            </div>
+            <div class="p-6 flex-1 text-sm text-slate-600 flex flex-col gap-4">
+                <p>가지고 계신 엑셀 파일(취합리포트 등)을 선택해 주세요. 앱이 자동으로 정리하고 동사 활용형을 계산합니다.</p>
+                
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <input type="file" id="excel-upload" accept=".xlsx, .xls" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"/>
+                </div>
+                
+                <div class="flex gap-2 mt-4">
+                    <button onclick="importExcelData(true)" class="flex-1 py-3 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold hover:bg-indigo-100 shadow-sm transition-colors text-sm">➕ 기존 단어에 추가</button>
+                    <button onclick="importExcelData(false)" class="flex-1 py-3 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 shadow-md transition-colors text-sm">🔄 새로 덮어쓰기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // 상태 및 데이터 관리
+    let words = [];
+    let currentIndex = 0;
+    
+    // 카드 상태: 0(앞면), 1(뒷면-뜻), 2(뒷면-상세)
+    let cardState = 0; 
+    let isKoreanFirst = true; // 현재 카드가 한국어 먼저 보여주는지 여부
+
+    // 고주온 배열 (1그룹 동사 활용 엔진용)
+    const gojuon = {
+        'う': ['わ', 'い', 'う', 'え', 'お'],
+        'く': ['か', 'き', 'く', 'け', 'こ'],
+        'ぐ': ['が', 'ぎ', 'ぐ', 'げ', 'ご'],
+        'す': ['さ', 'し', 'す', 'せ', 'そ'],
+        'つ': ['た', 'ち', 'つ', 'て', 'と'],
+        'ぬ': ['な', 'に', 'ぬ', 'ね', 'の'],
+        'ぶ': ['ば', 'び', 'ぶ', 'べ', 'ぼ'],
+        'む': ['ま', 'み', 'む', 'め', 'も'],
+        'る': ['ら', 'り', 'る', 'れ', 'ろ']
+    };
+
+    // 앱 시작 시 저장된 데이터 불러오기
+    window.onload = function() {
+        const savedData = localStorage.getItem('japaneseFlashcards');
+        if (savedData) {
+            try {
+                words = JSON.parse(savedData);
+                showToast("저장된 단어장을 불러왔습니다.");
+            } catch (e) {
+                console.error("데이터 로드 실패");
+                words = [];
+            }
+        }
+        
+        if (words.length > 0) {
+            shuffleCards(); // 시작 시 섞어서 보여줌
+        } else {
+            showToast("데이터 입력 버튼을 눌러 엑셀을 업로드해주세요.");
+        }
+    };
+
+    // 데이터 저장 함수
+    function saveData() {
+        localStorage.setItem('japaneseFlashcards', JSON.stringify(words));
+        const indicator = document.getElementById('sync-indicator');
+        indicator.classList.remove('bg-emerald-500');
+        indicator.classList.add('bg-amber-400');
+        setTimeout(() => {
+            indicator.classList.remove('bg-amber-400');
+            indicator.classList.add('bg-emerald-500');
+        }, 500);
+    }
+
+    // --- 동사 자동 분류 및 활용 엔진 ---
+    function classifyVerb(kanji, furigana) {
+        let word = furigana || kanji;
+        if (!word) return "";
+
+        // 3그룹
+        if (word.endsWith("する")) return "3그룹";
+        if (word === "くる" || word === "来る" || kanji.endsWith("来る")) return "3그룹";
+
+        // 1그룹 예외 (자주 쓰이는 것만 우선 적용)
+        const exceptions1 = ["かえる", "はいる", "きる", "しる", "はしる", "しゃべる", "へる"];
+        if (exceptions1.includes(word)) return "1그룹";
+
+        if (word.endsWith("る")) {
+            const beforeRu = word.charAt(word.length - 2);
+            const iDan = "いきしちにひみりゐ";
+            const eDan = "えけせてねへめれゑ";
+            if (iDan.includes(beforeRu) || eDan.includes(beforeRu)) {
+                return "2그룹";
+            }
+            return "1그룹";
+        }
+        
+        // 그 외 う단으로 끝나면 1그룹
+        return "1그룹";
+    }
+
+    function generateConjugations(kanji, furigana, group) {
+        let baseK = kanji.trim();
+        let baseF = furigana.trim() || baseK;
+
+        let tail = baseF.slice(-1);
+        let stemK = baseK.endsWith(tail) ? baseK.slice(0, -1) : baseK;
+        if (baseK.endsWith('来る')) stemK = baseK.slice(0, -2); // 예외 처리
+
+        let te="", ta="", nai="", masu="", kanou="", shouyu="", rule="";
+
+        if (group === "3그룹") {
+            if (baseF.endsWith("する")) {
+                stemK = baseK.endsWith("する") ? baseK.slice(0, -2) : baseK;
+                te="して"; ta="した"; nai="しない"; masu="します"; kanou="できる"; shouyu="しよう";
+                rule="3그룹 불규칙: する → して / しない 등";
+            } else { 
+                stemK = baseK.endsWith("来る") || baseK.endsWith("くる") ? baseK.slice(0, -2) : baseK;
+                te="きて"; ta="きた"; nai="こない"; masu="きます"; kanou="こられる"; shouyu="こよう";
+                rule="3그룹 불규칙: くる → きて / こない 등";
+            }
+            return {
+                te: stemK+te, ta: stemK+ta, nai: stemK+nai, masu: stemK+masu, 
+                kanou: (baseF.endsWith("する") && stemK === baseK) ? "できる" : stemK+kanou, 
+                shouyu: stemK+shouyu, rule
+            };
+        }
+
+        if (group === "2그룹") {
+            te="て"; ta="た"; nai="ない"; masu="ます"; kanou="られる"; shouyu="よう";
+            rule="2그룹: 어미 る 삭제 + て / ない / ます 등";
+            return { te:stemK+te, ta:stemK+ta, nai:stemK+nai, masu:stemK+masu, kanou:stemK+kanou, shouyu:stemK+shouyu, rule };
+        }
+
+        // 1그룹
+        if (baseK === "行く" || baseF === "いく") {
+            te="って"; ta="った"; nai="かない"; masu="きます"; kanou="ける"; shouyu="こう";
+            rule="1그룹 예외 (行く): いく → いって / いった";
+            return { te: stemK+te, ta: stemK+ta, nai: stemK+nai, masu: stemK+masu, kanou: stemK+kanou, shouyu: stemK+shouyu, rule };
+        }
+
+        if (gojuon[tail]) {
+            let row = gojuon[tail];
+            // 아단(ない), 이단(ます), 에단(가능), 오단(청유)
+            nai = row[0] + 'ない';
+            masu = row[1] + 'ます';
+            kanou = row[3] + 'る';
+            shouyu = row[4] + 'う';
+
+            if (tail === 'う' || tail === 'つ' || tail === 'る') {
+                te="って"; ta="った";
+                rule=`1그룹 (う/つ/る): 어미가 ${tail} → って/った`;
+                if(tail==='う') nai='わない'; // 예외: あない 가 아니라 わない
+            } else if (tail === 'む' || tail === 'ぶ' || tail === 'ぬ') {
+                te="んで"; ta="んだ";
+                rule=`1그룹 (む/ぶ/ぬ): 어미가 ${tail} → んで/んだ`;
+            } else if (tail === 'く') {
+                te="いて"; ta="いた";
+                rule="1그룹 (く): 어미가 く → いて/いた";
+            } else if (tail === 'ぐ') {
+                te="いで"; ta="いだ";
+                rule="1그룹 (ぐ): 어미가 ぐ → いで/いだ";
+            } else if (tail === 'す') {
+                te="して"; ta="した";
+                rule="1그룹 (す): 어미가 す → して/した";
+            }
+        }
+
+        return { te: stemK+te, ta: stemK+ta, nai: stemK+nai, masu: stemK+masu, kanou: stemK+kanou, shouyu: stemK+shouyu, rule };
+    }
+    // ------------------------------------
+
+    // 엑셀 데이터 파싱 및 추가
+    function importExcelData(isAppend) {
+        const fileInput = document.getElementById('excel-upload');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showToast('엑셀 파일을 선택해주세요.', 'error');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1}); // 2차원 배열로 가져오기
+
+            let newWords = [];
+            
+            // 데이터 파싱 및 클렌징 (row[0]:번호, row[1]:단어, row[2]:히라가나, row[3]:뜻, row[4]:품사)
+            for (let i = 1; i < jsonData.length; i++) { // 첫 줄(헤더) 건너뜀
+                const row = jsonData[i];
+                if (!row || row.length < 3) continue; // 빈 줄 무시
+
+                let kanji = (row[1] || '').toString().trim();
+                let furigana = (row[2] || '').toString().trim();
+                let meaning = (row[3] || '').toString().trim();
+                let pos = (row[4] || '').toString().trim();
+
+                // 구분선이나 헤더 다시 나온 경우 무시
+                if (kanji.includes('──') || kanji === '일본어' || kanji === '단어' || !meaning) continue;
+                if (!kanji && furigana) kanji = furigana; // 한자가 없고 히라가나만 있는 경우
+
+                let group = "";
+                let conj = null;
+
+                if (pos.includes("동사")) {
+                    group = classifyVerb(kanji, furigana);
+                    pos = `${group} 동사`;
+                    conj = generateConjugations(kanji, furigana, group);
+                }
+
+                newWords.push({
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    kanji: kanji,
+                    furigana: furigana,
+                    meaning: meaning,
+                    pos: pos,
+                    group: group,
+                    conj: conj,
+                    status: 0
+                });
+            }
+
+            if (newWords.length > 0) {
+                if (isAppend) {
+                    words = words.concat(newWords);
+                } else {
+                    words = newWords;
+                }
+                
+                currentIndex = 0;
+                saveData(); // 로컬 저장소에 저장
+                updateCardView();
+                renderList();
+                
+                showToast(`${newWords.length}개의 단어가 성공적으로 ${isAppend ? '추가' : '덮어쓰기'} 되었습니다!`);
+                
+                fileInput.value = '';
+                closeModal();
+            } else {
+                showToast('유효한 단어 데이터를 찾지 못했습니다.', 'error');
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
+
+    // 카드 뷰 업데이트
+    function updateCardView() {
+        if (words.length === 0) {
+            document.getElementById('word-front').textContent = "단어가 없습니다.";
+            document.getElementById('progress-text').textContent = "0 / 0";
+            return;
+        }
+
+        const word = words[currentIndex];
+        document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${words.length}`;
+        
+        // 랜덤으로 한국어/일본어(한자) 앞면 결정 (요미가나 제외)
+        isKoreanFirst = Math.random() < 0.5;
+        
+        // 상태 초기화
+        cardState = 0;
+        const flashcard = document.getElementById('flashcard');
+        flashcard.classList.remove('rotate-y-180');
+        
+        // 뒷면 상태 1 콘텐츠 활성화, 상태 2 숨김
+        document.getElementById('state-1-content').classList.remove('hidden');
+        document.getElementById('state-2-content').classList.add('hidden');
+
+        // 값 할당
+        const frontText = isKoreanFirst ? word.meaning : word.kanji;
+        const back1Text = isKoreanFirst ? word.kanji : word.meaning;
+        
+        document.getElementById('word-front').textContent = frontText;
+        
+        // 뒷면 상태 1 (뜻과 함께 요미가나 표시)
+        document.getElementById('word-back-1').textContent = back1Text;
+        document.getElementById('word-furi-1').textContent = word.furigana ? `[ ${word.furigana} ]` : "";
+
+        // 뒷면 상태 2 (상세 정보)
+        document.getElementById('word-pos').textContent = word.pos || "품사 없음";
+        document.getElementById('word-pos').className = word.pos.includes('동사') ? "bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-bold mb-3" : "bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold mb-3";
+        document.getElementById('word-kanji-2').textContent = word.kanji;
+        document.getElementById('word-furi-2').textContent = word.furigana ? word.furigana : "";
+        document.getElementById('word-meaning-2').textContent = word.meaning;
+
+        // 활용형 버튼 세팅
+        if (word.conj) {
+            document.getElementById('conjugation-area').classList.remove('hidden');
+            document.getElementById('no-conj-msg').classList.add('hidden');
+            document.getElementById('conj-result').textContent = "버튼을 선택하세요";
+            document.getElementById('conj-rule').textContent = word.conj.rule;
+        } else {
+            document.getElementById('conjugation-area').classList.add('hidden');
+            document.getElementById('no-conj-msg').classList.remove('hidden');
+        }
+
+        updateStatusUI();
+    }
+
+    // 카드 클릭(터치) 시 상태 변경 로직
+    function handleCardClick() {
+        if (words.length === 0) return;
+        const flashcard = document.getElementById('flashcard');
+        const state1 = document.getElementById('state-1-content');
+        const state2 = document.getElementById('state-2-content');
+
+        if (cardState === 0) {
+            // 0 -> 1 (뒤집기)
+            cardState = 1;
+            flashcard.classList.add('rotate-y-180');
+        } else if (cardState === 1) {
+            // 1 -> 2 (뒷면 콘텐츠 크로스페이드)
+            cardState = 2;
+            state1.classList.add('hidden');
+            state2.classList.remove('hidden');
+        } else if (cardState === 2) {
+            // 2 -> 0 (다시 앞면으로 덮기)
+            cardState = 0;
+            flashcard.classList.remove('rotate-y-180');
+            // 애니메이션 끝난 후 콘텐츠 원래대로
+            setTimeout(() => {
+                state1.classList.remove('hidden');
+                state2.classList.add('hidden');
+            }, 300);
+        }
+    }
+
+    // 활용형 버튼 클릭 처리
+    function showConjugation(event, type) {
+        event.stopPropagation(); // 카드 뒤집기 이벤트 방지
+        const word = words[currentIndex];
+        if (!word || !word.conj) return;
+
+        const resultEl = document.getElementById('conj-result');
+        let text = "";
+        switch(type) {
+            case 'te': text = word.conj.te; break;
+            case 'ta': text = word.conj.ta; break;
+            case 'nai': text = word.conj.nai; break;
+            case 'masu': text = word.conj.masu; break;
+            case 'kanou': text = word.conj.kanou; break;
+            case 'shouyu': text = word.conj.shouyu; break;
+        }
+        
+        resultEl.style.opacity = '0';
+        setTimeout(() => {
+            resultEl.textContent = text;
+            resultEl.style.opacity = '1';
+        }, 150);
+    }
+
+    // 암기 상태 변경 및 UI 업데이트
+    function setStatus(statusLevel) {
+        if (words.length === 0) return;
+        words[currentIndex].status = statusLevel;
+        updateStatusUI();
+        saveData();
+        renderList(); // 리스트 탭에도 실시간 반영
+    }
+
+    function updateStatusUI() {
+        const word = words[currentIndex];
+        const btns = [document.getElementById('status-0'), document.getElementById('status-1'), document.getElementById('status-2')];
+        
+        btns[0].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all border-slate-200 text-slate-400 hover:bg-slate-100";
+        btns[1].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all border-amber-200 text-amber-400 hover:bg-amber-50";
+        btns[2].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all border-emerald-200 text-emerald-400 hover:bg-emerald-50";
+
+        if(word.status === 0) btns[0].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all bg-slate-500 border-slate-500 text-white scale-110 shadow-md";
+        if(word.status === 1) btns[1].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all bg-amber-400 border-amber-400 text-white scale-110 shadow-md";
+        if(word.status === 2) btns[2].className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all bg-emerald-500 border-emerald-500 text-white scale-110 shadow-md";
+    }
+
+    // 이전/다음/섞기
+    function nextCard() {
+        if (words.length > 0) {
+            currentIndex = (currentIndex + 1) % words.length;
+            updateCardView();
+        }
+    }
+    
+    function prevCard() {
+        if (words.length > 0) {
+            currentIndex = (currentIndex - 1 + words.length) % words.length;
+            updateCardView();
+        }
+    }
+
+    function shuffleCards() {
+        if (words.length === 0) return;
+        for (let i = words.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [words[i], words[j]] = [words[j], words[i]];
+        }
+        currentIndex = 0;
+        updateCardView();
+        renderList();
+        showToast("카드를 섞었습니다! 🔀");
+    }
+
+    // 단어 리스트 렌더링
+    function renderList() {
+        const container = document.getElementById('word-list-container');
+        document.getElementById('list-count').textContent = words.length;
+        container.innerHTML = '';
+
+        if(words.length === 0) {
+            container.innerHTML = '<p class="text-center text-slate-400 mt-10 text-sm">등록된 단어가 없습니다.</p>';
+            return;
+        }
+
+        words.forEach((word, index) => {
+            const item = document.createElement('div');
+            item.className = "flex justify-between items-center p-3 mb-2 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-teal-200 cursor-pointer transition-colors";
+            
+            let statusDot = '<span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>';
+            if(word.status === 1) statusDot = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>';
+            if(word.status === 2) statusDot = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>';
+
+            item.innerHTML = `
+                <div class="flex items-center gap-3">
+                    ${statusDot}
+                    <div>
+                        <p class="font-bold text-slate-800">${word.kanji} <span class="text-xs font-normal text-slate-400 ml-1">${word.furigana}</span></p>
+                        <p class="text-xs text-slate-500">${word.meaning}</p>
+                    </div>
+                </div>
+                <span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500">${word.pos}</span>
+            `;
+
+            // 리스트에서 단어 클릭 시 해당 카드로 이동
+            item.onclick = () => {
+                currentIndex = index;
+                switchTab('flashcard');
+                updateCardView();
+            };
+
+            container.appendChild(item);
+        });
+    }
+
+    // 모달, 탭, 토스트 UI 유틸리티
+    function openModal() {
+        const m = document.getElementById('data-modal');
+        const mc = document.getElementById('data-modal-content');
+        m.classList.remove('opacity-0', 'pointer-events-none');
+        mc.classList.remove('translate-y-4');
+    }
+
+    function closeModal() {
+        const m = document.getElementById('data-modal');
+        const mc = document.getElementById('data-modal-content');
+        m.classList.add('opacity-0', 'pointer-events-none');
+        mc.classList.add('translate-y-4');
+    }
+
+    function switchTab(tabName) {
+        document.getElementById('flashcard-tab').classList.add('hidden');
+        document.getElementById('list-tab').classList.add('hidden');
+        document.getElementById('tab-btn-flashcard').classList.replace('border-teal-600', 'border-transparent');
+        document.getElementById('tab-btn-flashcard').classList.replace('text-teal-700', 'text-slate-400');
+        document.getElementById('tab-btn-list').classList.replace('border-teal-600', 'border-transparent');
+        document.getElementById('tab-btn-list').classList.replace('text-teal-700', 'text-slate-400');
+
+        if(tabName === 'flashcard') {
+            document.getElementById('flashcard-tab').classList.remove('hidden');
+            document.getElementById('tab-btn-flashcard').classList.replace('border-transparent', 'border-teal-600');
+            document.getElementById('tab-btn-flashcard').classList.replace('text-slate-400', 'text-teal-700');
+            updateCardView();
+        } else {
+            document.getElementById('list-tab').classList.remove('hidden');
+            document.getElementById('tab-btn-list').classList.replace('border-transparent', 'border-teal-600');
+            document.getElementById('tab-btn-list').classList.replace('text-slate-400', 'text-teal-700');
+            renderList();
+        }
+    }
+
+    function showToast(msg, type='success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-sm font-bold shadow-xl transition-all duration-300 z-50 ${type === 'success' ? 'bg-slate-800 text-white' : 'bg-red-500 text-white'}`;
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 2500);
+    }
+
+    // 키보드 조작
+    document.addEventListener('keydown', (e) => {
+        const dataModal = document.getElementById('data-modal');
+        if (!dataModal.classList.contains('pointer-events-none')) return;
+        if (!document.getElementById('list-tab').classList.contains('hidden')) return;
+
+        if (e.key === 'ArrowRight') nextCard();
+        else if (e.key === 'ArrowLeft') prevCard();
+        else if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            handleCardClick();
+        }
+        else if (e.key === '1') setStatus(0);
+        else if (e.key === '2') setStatus(1);
+        else if (e.key === '3') setStatus(2);
+    });
+
+</script>
+</body>
+</html>
