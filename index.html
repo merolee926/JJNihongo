@@ -81,50 +81,50 @@
             <div id="flashcard" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-3xl shadow-xl">
                 
                 <!-- 앞면 -->
-                <div id="card-front" class="absolute w-full h-full backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-4 border-2 border-slate-100">
-                    <p class="text-slate-400 text-sm mb-2 font-bold">터치 ㄱ</p>
+                <div id="card-front" class="absolute w-full h-full backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-6 border-2 border-slate-100">
+                    <p class="text-slate-400 text-sm mb-4 font-bold">터치 ㄱ</p>
                     <h2 id="word-front" class="text-4xl sm:text-5xl font-extrabold text-slate-700 text-center leading-tight break-keep"></h2>
                 </div>
 
-                <!-- 뒷면 (여백 대폭 축소) -->
-                <div id="card-back" class="absolute w-full h-full backface-hidden bg-teal-50 rounded-3xl flex flex-col items-center justify-center p-2 sm:p-4 border-2 border-teal-100 rotate-y-180 overflow-y-auto no-scrollbar">
+                <!-- 뒷면 -->
+                <div id="card-back" class="absolute w-full h-full backface-hidden bg-teal-50 rounded-3xl flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-teal-100 rotate-y-180 overflow-y-auto no-scrollbar">
                     
-                    <!-- 상태 1 (뜻) -->
                     <div id="state-1-content" class="w-full flex flex-col items-center justify-center h-full">
-                        <p id="word-furi-1" class="text-teal-600 text-lg sm:text-xl font-bold mb-1 h-6"></p>
-                        <h2 id="word-back-1" class="text-4xl sm:text-5xl font-extrabold text-slate-800 text-center leading-tight break-keep mb-4"></h2>
-                        <!-- 명사일 때 숨겨질 힌트 문구 -->
-                        <p id="hint-conj" class="text-slate-400 text-[11px] mt-4 font-bold bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100 hidden">👆 활용형 터치 ㄱ</p>
+                        <p id="word-furi-1" class="text-teal-600 text-xl font-bold mb-2 h-8"></p>
+                        <h2 id="word-back-1" class="text-4xl sm:text-5xl font-extrabold text-slate-800 text-center leading-tight break-keep mb-6"></h2>
+                        <!-- 명사일 때 숨겨질 힌트 문구에 id="hint-conj" 추가 -->
+                        <p id="hint-conj" class="text-slate-400 text-xs mt-auto font-bold bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-100">👆 활용형 터치 ㄱ</p>
                     </div>
 
-                    <!-- 상태 2 (상세 활용형 - 극도로 압축하여 스크롤 방지) -->
-                    <div id="state-2-content" class="w-full flex flex-col items-center justify-center h-full hidden w-[95%] mx-auto">
-                        <span id="word-pos" class="px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 shadow-sm border"></span>
-                        <p id="word-furi-2" class="text-teal-600 text-[12px] sm:text-sm font-bold mb-0"></p>
-                        <h2 id="word-kanji-2" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-0.5 leading-tight"></h2>
-                        <h3 id="word-meaning-2" class="text-[13px] sm:text-sm font-bold text-slate-600 mb-1.5 leading-tight"></h3>
+                    <div id="state-2-content" class="w-full flex flex-col items-center justify-center h-full hidden w-full">
+                        <span id="word-pos" class="px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold mb-1.5 shadow-sm border"></span>
+                        <p id="word-furi-2" class="text-teal-600 text-base sm:text-lg font-bold mb-0.5"></p>
+                        <h2 id="word-kanji-2" class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-1 leading-tight"></h2>
+                        <h3 id="word-meaning-2" class="text-lg sm:text-xl font-bold text-slate-600 mb-5 sm:mb-6 leading-tight"></h3>
                         
-                        <div id="conjugation-area" class="w-full hidden flex-col gap-1 w-full mx-auto">
-                            <p class="text-[10px] text-slate-500 font-bold text-center mb-0.5">활용형 연습</p>
-                            <div class="grid grid-cols-2 gap-1 w-full">
-                                <button onclick="showConjugation(event, 'te')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">연결형 (て)</button>
-                                <button onclick="showConjugation(event, 'ta')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">과거형 (た)</button>
-                                <button onclick="showConjugation(event, 'nai')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">부정형 (ない)</button>
-                                <button onclick="showConjugation(event, 'masu')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">정중형 (ます)</button>
-                                <button onclick="showConjugation(event, 'kanou')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">가능형</button>
-                                <button onclick="showConjugation(event, 'shouyu')" class="py-1 bg-white rounded-md text-[11px] sm:text-[13px] font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">청유형</button>
+                        <div id="conjugation-area" class="w-full hidden flex-col gap-2.5 sm:gap-3 w-[95%] mx-auto pb-2">
+                            <p class="text-[12px] sm:text-xs text-slate-500 font-bold text-center mb-0.5">활용형 연습</p>
+                            <div class="grid grid-cols-2 gap-2 w-full">
+                                <button onclick="showConjugation(event, 'te')" class="py-2.5 bg-white rounded-lg text-[13px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">연결형 (て)</button>
+                                <button onclick="showConjugation(event, 'ta')" class="py-2.5 bg-white rounded-lg text-[13px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">과거형 (た)</button>
+                                <button onclick="showConjugation(event, 'nai')" class="py-2.5 bg-white rounded-lg text-[13px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">부정형 (ない)</button>
+                                <button onclick="showConjugation(event, 'masu')" class="py-2.5 bg-white rounded-lg text-[13px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">정중형 (ます)</button>
+                                <button onclick="showConjugation(event, 'kanou')" class="py-2.5 bg-white rounded-lg text-[13px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">가능형</button>
+                                <button onclick="showConjugation(event, 'shouyu')" class="py-2.5 bg-white rounded-lg text-[13px] sm:text-sm font-bold text-slate-700 border border-slate-200 shadow-sm active:bg-slate-50">청유형</button>
                             </div>
                             
-                            <div class="mt-1 p-1.5 bg-white rounded-lg border border-teal-100 text-center shadow-inner min-h-[45px] flex flex-col justify-center">
-                                <p id="conj-result" class="text-base sm:text-xl font-black text-teal-700 mb-0 transition-opacity duration-200 break-keep leading-none">버튼 눌러</p>
-                                <p id="conj-rule" class="text-[9px] sm:text-[11px] text-slate-500 font-medium break-keep leading-tight mt-0.5"></p>
+                            <div class="mt-1 p-3 sm:p-4 bg-white rounded-xl border border-teal-100 text-center shadow-inner min-h-[75px] flex flex-col justify-center">
+                                <p id="conj-result" class="text-xl sm:text-2xl font-black text-teal-700 mb-1 transition-opacity duration-200 break-keep">버튼 눌러</p>
+                                <p id="conj-rule" class="text-[11px] sm:text-[12px] text-slate-500 font-medium break-keep leading-tight"></p>
                             </div>
                         </div>
-                        <p id="no-conj-msg" class="text-xs text-slate-400 mt-2 hidden font-bold bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">활용형 X</p>
+                        <p id="no-conj-msg" class="text-sm text-slate-400 mt-4 hidden font-bold bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm">활용형 X</p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="w-full flex justify-between items-center gap-2 sm:gap-3 mt-3 shrink-0 pb-2">
 
         <div class="w-full flex justify-between items-center gap-2 mt-1 shrink-0 pb-1 sm:pb-2">
             <button onclick="prevCard()" class="flex-1 py-3 bg-white rounded-2xl text-slate-600 font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors text-[13px] sm:text-base">👈 이전</button>
@@ -365,7 +365,7 @@ const firebaseConfig = {
             res.te = { text: stem + "で", rule: "나형용사: 어미 だ/な 지우고 で 결합" };
             res.ta = { text: stem + "だった", rule: "나형용사: 어미 지우고 だった 결합" };
             res.nai = { text: stem + "ではない (또는 じゃない)", rule: "나형용사: 어미 지우고 ではない 결합" };
-            res.masu = { text: stem + "です", rule: "나형용사: 어미 지우고 です 결합" };
+            res.masu = { text: stem + "듯", rule: "나형용사: 어미 지우고 です 결합" };
             res.kanou = { text: "-", rule: "해당 없음" };
             res.shouyu = { text: stem + "だろう", rule: "나형용사: 어미 지우고 だろう 결합" };
             return res;
@@ -448,7 +448,7 @@ const firebaseConfig = {
                 res.ta = { text: stemK + "いた", rule: `1그룹(${tail}): 어미 지우고 いた 결합 (이음편)` };
             } else if (tail === 'ぐ') {
                 res.te = { text: stemK + "いで", rule: `1그룹(${tail}): 어미 지우고 いで 결합 (이음편)` };
-                res.ta = { text: stemK + "いだ", rule: `1그룹(${tail}): 어미 지우고 いだ 결합 (이음편)` };
+                res.ta = { text: stemK + "いだ", rule: `1그룹(${tail}): 어미 지우고 い다 결합 (이음편)` };
             } else if (tail === 'す') {
                 res.te = { text: stemK + "して", rule: `1그룹(${tail}): 어미 지우고 して 결합` };
                 res.ta = { text: stemK + "した", rule: `1그룹(${tail}): 어미 지우고 した 결합` };
@@ -628,7 +628,7 @@ const firebaseConfig = {
             flashcard.classList.add('rotate-y-180');
         } else if (window.cardState === 1) {
             if (!word.conj) {
-                // 명사 등 활용형이 없으면 바로 앞면으로 덮기 스킵
+                // 명사 등 활용형이 없으면 빈 페이지를 띄우지 않고 바로 앞면으로 스킵
                 window.cardState = 0;
                 flashcard.classList.remove('rotate-y-180');
             } else {
