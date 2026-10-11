@@ -190,8 +190,7 @@ const firebaseConfig = {
   measurementId: "G-8NM7V62JFE"
     };
 
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : customFirebaseConfig;
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'nihongo-sync-app';
+  const appId = 'nihongo-sync-app';
     let app, db, auth;
     let currentUser = null;
 
